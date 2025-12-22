@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Android Webcam - USB Debugging</title>
+    <title>Android Webcam Streamer - HP ke Komputer</title>
     <style>
         * {
             margin: 0;
@@ -194,6 +194,22 @@
             word-break: break-all;
         }
         
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        #qrCode {
+            width: 200px;
+            height: 200px;
+            margin: 15px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 10px;
+        }
+        
         .connection-buttons {
             display: flex;
             gap: 15px;
@@ -234,154 +250,6 @@
             transform: translateY(-2px);
         }
         
-        /* USB Debugging Guide Modal */
-        #usbGuideModal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.9);
-            display: none;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 1001;
-            padding: 20px;
-            overflow-y: auto;
-        }
-        
-        #usbGuideModal.active {
-            display: flex;
-        }
-        
-        .modal-content {
-            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-            border-radius: 20px;
-            padding: 30px;
-            max-width: 800px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        
-        .modal-title {
-            font-size: 24px;
-            font-weight: 600;
-            color: #4a90e2;
-        }
-        
-        .close-modal {
-            background: rgba(255, 255, 255, 0.1);
-            border: none;
-            color: white;
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 24px;
-            transition: all 0.3s ease;
-        }
-        
-        .close-modal:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.1);
-        }
-        
-        .guide-steps {
-            display: flex;
-            flex-direction: column;
-            gap: 25px;
-        }
-        
-        .guide-step {
-            display: flex;
-            gap: 20px;
-            align-items: flex-start;
-            background: rgba(255, 255, 255, 0.05);
-            padding: 25px;
-            border-radius: 15px;
-            transition: all 0.3s ease;
-        }
-        
-        .guide-step:hover {
-            background: rgba(255, 255, 255, 0.08);
-            transform: translateY(-2px);
-        }
-        
-        .guide-step-number {
-            background: #4a90e2;
-            color: white;
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            font-weight: bold;
-            flex-shrink: 0;
-        }
-        
-        .guide-step-content {
-            flex: 1;
-        }
-        
-        .guide-step-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: white;
-        }
-        
-        .guide-step-description {
-            color: #b8c1ec;
-            line-height: 1.6;
-            margin-bottom: 15px;
-        }
-        
-        .guide-code {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 10px;
-            font-family: monospace;
-            font-size: 14px;
-            margin-top: 10px;
-            word-break: break-all;
-        }
-        
-        .guide-note {
-            background: rgba(255, 193, 7, 0.1);
-            border-left: 4px solid #ffc107;
-            padding: 15px;
-            margin-top: 15px;
-            border-radius: 0 8px 8px 0;
-        }
-        
-        .note-title {
-            font-weight: 600;
-            color: #ffc107;
-            margin-bottom: 5px;
-        }
-        
-        .modal-footer {
-            margin-top: 30px;
-            display: flex;
-            gap: 15px;
-            justify-content: flex-end;
-        }
-        
         /* Main Camera Screen */
         #cameraScreen {
             position: fixed;
@@ -408,6 +276,20 @@
             height: 100%;
             object-fit: cover;
             display: block;
+            transform-origin: center center;
+        }
+        
+        #localVideo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 120px;
+            height: 160px;
+            border-radius: 10px;
+            border: 2px solid #4a90e2;
+            object-fit: cover;
+            z-index: 10;
+            display: none;
         }
         
         /* Top Bar */
@@ -459,6 +341,17 @@
         .server-info {
             color: #aaa;
             font-size: 14px;
+        }
+        
+        .device-info {
+            background: rgba(0, 0, 0, 0.6);
+            padding: 8px 15px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         
         .controls-right {
@@ -730,53 +623,6 @@
             background: #3a80d2;
         }
         
-        /* USB Debug Panel */
-        #usbDebugPanel {
-            position: fixed;
-            bottom: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px;
-            border-radius: 10px;
-            backdrop-filter: blur(10px);
-            display: none;
-            z-index: 20;
-        }
-        
-        .usb-debug-title {
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: #4a90e2;
-        }
-        
-        .usb-status {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 10px;
-        }
-        
-        .usb-status-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #ff4757;
-        }
-        
-        .usb-status-dot.connected {
-            background: #4caf50;
-            animation: pulse 2s infinite;
-        }
-        
-        .usb-command-box {
-            background: rgba(0, 0, 0, 0.5);
-            padding: 10px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 12px;
-            margin-bottom: 10px;
-        }
-        
         /* Notification */
         .notification {
             position: fixed;
@@ -796,6 +642,53 @@
         @keyframes slideIn {
             from { top: 50px; opacity: 0; }
             to { top: 100px; opacity: 1; }
+        }
+        
+        /* Device Selection */
+        .device-selection {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .device-option {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .device-option:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .device-option.selected {
+            background: rgba(74, 144, 226, 0.2);
+            border: 1px solid #4a90e2;
+        }
+        
+        .device-icon {
+            font-size: 30px;
+            margin-right: 15px;
+        }
+        
+        .device-info-small {
+            flex: 1;
+        }
+        
+        .device-name {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .device-type {
+            color: #aaa;
+            font-size: 12px;
         }
         
         /* Responsive */
@@ -828,24 +721,9 @@
                 flex-direction: column;
             }
             
-            .modal-content {
-                padding: 20px;
-                margin: 10px;
-            }
-            
-            .guide-step {
-                flex-direction: column;
-                gap: 15px;
-            }
-            
-            .guide-step-number {
-                width: 35px;
-                height: 35px;
-                font-size: 18px;
-            }
-            
-            .guide-step-title {
-                font-size: 18px;
+            #qrCode {
+                width: 150px;
+                height: 150px;
             }
         }
         
@@ -858,80 +736,123 @@
                 max-height: 50vh;
             }
         }
+        
+        /* Connection status */
+        .connection-status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .status-connected {
+            background: rgba(76, 175, 80, 0.2);
+            color: #4caf50;
+        }
+        
+        .status-disconnected {
+            background: rgba(255, 71, 87, 0.2);
+            color: #ff4757;
+        }
+        
+        /* QR Code Styling */
+        .qr-code-wrapper {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .qr-code-img {
+            max-width: 200px;
+            height: auto;
+        }
     </style>
+    <!-- QR Code Library -->
+    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
     <!-- Loading Screen -->
     <div id="loadingScreen">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Android Webcam</div>
-        <div class="loading-subtext">Menyiapkan kamera untuk streaming...</div>
+        <div class="loading-text">Android Webcam Streamer</div>
+        <div class="loading-subtext">Menyiapkan sistem streaming kamera...</div>
     </div>
     
     <!-- Connection Screen -->
     <div id="connectionScreen">
         <div class="connection-icon">📱</div>
-        <div class="connection-title">Android Webcam</div>
-        <div class="connection-subtitle">Pilih metode koneksi untuk streaming</div>
+        <div class="connection-title">Android Webcam Streamer</div>
+        <div class="connection-subtitle">Pilih peran perangkat Anda</div>
         
         <div class="connection-tabs">
-            <div class="connection-tab active" data-tab="wifi">WiFi Connection</div>
-            <div class="connection-tab" data-tab="usb">USB Debugging</div>
+            <div class="connection-tab active" data-tab="sender">📱 HP Android (Sender)</div>
+            <div class="connection-tab" data-tab="receiver">💻 Komputer (Receiver)</div>
         </div>
         
-        <!-- WiFi Tab -->
-        <div id="wifiTab" class="connection-content active">
+        <!-- Sender Tab (Untuk HP Android) -->
+        <div id="senderTab" class="connection-content active">
             <div class="connection-steps">
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <div class="step-title">Start Camera on Android</div>
-                        <div class="step-description">Klik "Start Camera" untuk memulai streaming dari HP</div>
+                        <div class="step-title">Allow Camera Access</div>
+                        <div class="step-description">Izinkan akses kamera saat browser meminta izin</div>
                     </div>
                 </div>
                 
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <div class="step-title">Same WiFi Network</div>
-                        <div class="step-description">Pastikan HP dan komputer dalam jaringan WiFi yang sama</div>
+                        <div class="step-title">Start Camera Stream</div>
+                        <div class="step-description">Klik tombol "Start Camera Stream" di bawah</div>
                     </div>
                 </div>
                 
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <div class="step-title">Use URL in OBS/vMix</div>
-                        <div class="step-description">Salin URL yang muncul dan tempel di OBS sebagai Browser Source</div>
+                        <div class="step-title">Share QR Code</div>
+                        <div class="step-description">Scan QR code ini di komputer untuk terhubung</div>
+                        <div class="qr-container">
+                            <div id="senderQrCode" class="qr-code-wrapper">
+                                <!-- QR Code akan ditampilkan di sini -->
+                            </div>
+                            <div class="step-description" style="margin-top: 10px;">Atau salin Connection ID:</div>
+                            <div class="usb-command" id="senderConnectionId">Loading...</div>
+                        </div>
                     </div>
                 </div>
             </div>
             
             <div class="connection-buttons">
-                <button id="startCameraWifi" class="btn btn-primary">
-                    Start Camera (WiFi)
-                </button>
-                <button id="settingsBtn" class="btn btn-secondary">
-                    Settings
+                <button id="startSenderCamera" class="btn btn-primary">
+                    📹 Start Camera Stream
                 </button>
             </div>
         </div>
         
-        <!-- USB Debugging Tab -->
-        <div id="usbTab" class="connection-content">
+        <!-- Receiver Tab (Untuk Komputer) -->
+        <div id="receiverTab" class="connection-content">
             <div class="connection-steps">
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <div class="step-title">Enable USB Debugging</div>
-                        <div class="step-description">
-                            Di HP Android:
-                            <ul style="margin-left: 15px; margin-top: 5px;">
-                                <li>Buka Pengaturan → Tentang Telepon</li>
-                                <li>Ketuk "Nomor Build" 7 kali</li>
-                                <li>Kembali → Opsi Pengembang</li>
-                                <li>Aktifkan "USB Debugging"</li>
-                            </ul>
+                        <div class="step-title">Scan QR Code</div>
+                        <div class="step-description">Scan QR code dari HP Android atau masukkan Connection ID</div>
+                        <div class="qr-container">
+                            <div style="margin-bottom: 15px;">
+                                <input type="text" id="connectionIdInput" placeholder="Masukkan Connection ID" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #4a90e2; background: rgba(255,255,255,0.1); color: white;">
+                            </div>
+                            <div class="step-description">Atau gunakan QR code di bawah untuk menghubungkan HP ke komputer:</div>
+                            <div id="receiverQrCode" class="qr-code-wrapper">
+                                <!-- QR Code akan ditampilkan di sini -->
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -939,190 +860,48 @@
                 <div class="step">
                     <div class="step-number">2</div>
                     <div class="step-content">
-                        <div class="step-title">Connect USB Cable</div>
-                        <div class="step-description">Hubungkan HP ke komputer via kabel USB</div>
-                        <div class="usb-command">Pilih mode "File Transfer" atau "PTP" saat muncul pilihan</div>
+                        <div class="step-title">Connect to Stream</div>
+                        <div class="step-description">Klik "Connect to Phone Camera" untuk mulai menerima stream</div>
                     </div>
                 </div>
                 
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <div class="step-title">Setup ADB on Computer</div>
-                        <div class="step-description">
-                            Di komputer:
-                            <ol style="margin-left: 15px; margin-top: 5px;">
-                                <li>Download ADB tools dari Android Developer</li>
-                                <li>Ekstrak ke folder (misal: C:\adb)</li>
-                                <li>Buka Command Prompt di folder tersebut</li>
-                            </ol>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">
-                        <div class="step-title">Run ADB Commands</div>
-                        <div class="step-description">Jalankan perintah berikut di Command Prompt:</div>
-                        <div class="usb-command">adb devices</div>
-                        <div class="step-description">(Jika muncul device ID, lanjutkan dengan:)</div>
-                        <div class="usb-command">adb forward tcp:8080 tcp:8080</div>
+                        <div class="step-title">Use in OBS</div>
+                        <div class="step-description">Gunakan URL di bawah untuk OBS Browser Source</div>
+                        <div class="usb-command" id="receiverObsUrl">http://localhost:8080</div>
                     </div>
                 </div>
             </div>
             
             <div class="connection-buttons">
-                <button id="startCameraUsb" class="btn btn-primary">
-                    Start Camera (USB)
+                <button id="connectToSender" class="btn btn-primary">
+                    🔗 Connect to Phone Camera
                 </button>
-                <button id="showUsbGuide" class="btn btn-secondary">
-                    How to Use USB Debugging
+                <button id="copyReceiverUrl" class="btn btn-secondary">
+                    📋 Copy OBS URL
                 </button>
             </div>
         </div>
     </div>
     
-    <!-- USB Debugging Guide Modal -->
-    <div id="usbGuideModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <div class="modal-title">📋 USB Debugging Setup Guide</div>
-                <button class="close-modal" id="closeUsbGuide">×</button>
-            </div>
-            
-            <div class="guide-steps">
-                <div class="guide-step">
-                    <div class="guide-step-number">1</div>
-                    <div class="guide-step-content">
-                        <div class="guide-step-title">Enable Developer Options on Android</div>
-                        <div class="guide-step-description">
-                            <strong>On your Android phone:</strong>
-                            <ol>
-                                <li>Go to <strong>Settings</strong> → <strong>About Phone</strong></li>
-                                <li>Tap on <strong>Build Number</strong> 7 times</li>
-                                <li>You'll see a message: "You are now a developer!"</li>
-                                <li>Go back to Settings → <strong>System</strong> → <strong>Developer Options</strong></li>
-                                <li>Enable <strong>USB Debugging</strong></li>
-                            </ol>
-                        </div>
-                        <div class="guide-note">
-                            <div class="note-title">Note:</div>
-                            <div>Build Number might be under "Software Information" on some devices</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="guide-step">
-                    <div class="guide-step-number">2</div>
-                    <div class="guide-step-content">
-                        <div class="guide-step-title">Connect Your Phone via USB</div>
-                        <div class="guide-step-description">
-                            <strong>Connect your Android phone to computer:</strong>
-                            <ol>
-                                <li>Use a USB cable to connect your phone to computer</li>
-                                <li>On your phone, when prompted, select <strong>File Transfer</strong> or <strong>PTP (Photo Transfer)</strong> mode</li>
-                                <li>If asked, allow USB debugging on the computer</li>
-                            </ol>
-                        </div>
-                        <div class="guide-note">
-                            <div class="note-title">Tip:</div>
-                            <div>Use the original USB cable that came with your phone for best results</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="guide-step">
-                    <div class="guide-step-number">3</div>
-                    <div class="guide-step-content">
-                        <div class="guide-step-title">Install ADB on Computer</div>
-                        <div class="guide-step-description">
-                            <strong>On your Windows/Mac/Linux computer:</strong>
-                            <ol>
-                                <li>Download ADB tools from Android Developer website</li>
-                                <li>Extract the files to a folder (example: C:\adb on Windows)</li>
-                                <li>Open Command Prompt/Terminal in that folder</li>
-                            </ol>
-                        </div>
-                        <div class="guide-code">
-                            # Download link: https://developer.android.com/tools/releases/platform-tools
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="guide-step">
-                    <div class="guide-step-number">4</div>
-                    <div class="guide-step-content">
-                        <div class="guide-step-title">Run ADB Commands</div>
-                        <div class="guide-step-description">
-                            <strong>In Command Prompt/Terminal:</strong>
-                            <ol>
-                                <li>Check if device is detected:</li>
-                            </ol>
-                        </div>
-                        <div class="guide-code">adb devices</div>
-                        <div class="guide-step-description">
-                            <ol start="2">
-                                <li>If you see your device ID, run port forwarding:</li>
-                            </ol>
-                        </div>
-                        <div class="guide-code">adb forward tcp:8080 tcp:8080</div>
-                        <div class="guide-note">
-                            <div class="note-title">Important:</div>
-                            <div>Keep the Command Prompt/Terminal window open while using USB debugging</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="guide-step">
-                    <div class="guide-step-number">5</div>
-                    <div class="guide-step-content">
-                        <div class="guide-step-title">Start Camera and Use in OBS</div>
-                        <div class="guide-step-description">
-                            <strong>Back in the webcam app:</strong>
-                            <ol>
-                                <li>Click "Start Camera (USB)" button</li>
-                                <li>Wait for connection to establish</li>
-                                <li>In OBS, add a <strong>Browser Source</strong></li>
-                                <li>Use URL: <strong>http://localhost:8080</strong></li>
-                            </ol>
-                        </div>
-                        <div class="guide-note">
-                            <div class="note-title">Benefits of USB Debugging:</div>
-                            <div>• Faster and more stable than WiFi<br>• Lower latency<br>• Works without WiFi network<br>• Better video quality</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="modal-footer">
-                <button id="copyAllCommands" class="btn btn-secondary">Copy All Commands</button>
-                <button id="startFromGuide" class="btn btn-primary">Start Camera (USB)</button>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Main Camera Screen -->
-    <div id="cameraScreen">
+    <!-- Sender Camera Screen (Untuk HP) -->
+    <div id="senderCameraScreen" style="display: none;">
         <div class="video-container">
-            <video id="video" autoplay playsinline></video>
+            <video id="senderVideo" autoplay playsinline></video>
             
-            <!-- Top Bar -->
             <div class="top-bar">
                 <div class="connection-status">
-                    <div class="status-dot" id="statusDot"></div>
-                    <div class="status-text" id="statusText">CONNECTING</div>
-                    <div class="server-info" id="serverInfo">Initializing...</div>
+                    <div class="status-dot" id="senderStatusDot"></div>
+                    <div class="status-text" id="senderStatusText">Camera Active</div>
+                    <div class="device-info">
+                        <span id="connectedReceivers">Waiting for connection...</span>
+                    </div>
                 </div>
                 
                 <div class="controls-right">
-                    <button class="icon-btn" id="toggleUsbPanel">
-                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M7 2a1 1 0 00-.707 1.707L7 4.414v3.758a1 1 0 01-.293.707l-4 4C.817 14.769 2.156 18 4.828 18h10.343c2.673 0 4.012-3.231 2.122-5.121l-4-4A1 1 0 0113 8.172V4.414l.707-.707A1 1 0 0013 2H7zm2 6.172V4h2v4.172a3 3 0 00.879 2.12l1.027 1.028a4 4 0 00-2.171.102l-.47.156a4 4 0 01-2.53 0l-.563-.187a1.993 1.993 0 00-.114-.035l1.063-1.063A3 3 0 009 8.172z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                    
-                    <button class="icon-btn" id="toggleSettings">
+                    <button class="icon-btn" id="senderSettingsBtn">
                         <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                             <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
                         </svg>
@@ -1130,54 +909,93 @@
                 </div>
             </div>
             
-            <!-- Bottom Controls -->
             <div class="bottom-controls">
-                <button class="camera-switch-btn" id="switchCamera">
+                <button class="camera-switch-btn" id="senderSwitchCamera">
                     <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
                     </svg>
                 </button>
                 
                 <div class="main-controls">
-                    <button class="control-btn" id="zoomOutBtn">
+                    <button class="control-btn" id="senderFlashToggle">
                         <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                            <path fill-rule="evenodd" d="M5 8a1 1 0 011-1h4a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path>
-                        </svg>
-                    </button>
-                    
-                    <button class="record-btn" id="recordBtn">
-                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <circle cx="10" cy="10" r="5"/>
-                        </svg>
-                    </button>
-                    
-                    <button class="control-btn" id="zoomInBtn">
-                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
-                            <path fill-rule="evenodd" d="M8 4a1 1 0 011 1v3h3a1 1 0 110 2H9v3a1 1 0 11-2 0v-3H4a1 1 0 110-2h3V5a1 1 0 011-1z" clip-rule="evenodd"></path>
+                            <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
                         </svg>
                     </button>
                 </div>
                 
-                <button class="camera-switch-btn" id="flashToggle">
+                <button class="record-btn" id="senderDisconnectBtn">
                     <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                        <path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 001 1h12a1 1 0 001-1V4a1 1 0 00-1-1H3zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"></path>
                     </svg>
                 </button>
             </div>
             
-            <!-- USB Debug Panel -->
-            <div id="usbDebugPanel">
-                <div class="usb-debug-title">USB Debugging Status</div>
-                <div class="usb-status">
-                    <div class="usb-status-dot" id="usbStatusDot"></div>
-                    <span id="usbStatusText">Not Connected</span>
+            <!-- Connection Info Panel -->
+            <div id="senderConnectionInfo" style="position: absolute; top: 100px; left: 20px; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px); max-width: 300px;">
+                <div style="font-weight: 600; margin-bottom: 10px; color: #4a90e2;">📡 Streaming Info</div>
+                <div style="margin-bottom: 5px; font-size: 14px;">Connection ID: <span id="displayConnectionId" style="font-weight: bold;"></span></div>
+                <div style="margin-bottom: 10px; font-size: 14px;">Connected devices: <span id="senderConnectedCount">0</span></div>
+                <div style="font-size: 12px; color: #aaa;">Share Connection ID dengan komputer</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Receiver View Screen (Untuk Komputer) -->
+    <div id="receiverViewScreen" style="display: none;">
+        <div class="video-container">
+            <video id="receiverVideo" autoplay playsinline></video>
+            
+            <div class="top-bar">
+                <div class="connection-status">
+                    <div class="status-dot" id="receiverStatusDot" class="disconnected"></div>
+                    <div class="status-text" id="receiverStatusText">Disconnected</div>
+                    <div class="server-info" id="receiverStreamInfo">No active stream</div>
                 </div>
-                <div class="usb-command-box" id="usbCommandDisplay">
-                    adb forward tcp:8080 tcp:8080
+                
+                <div class="controls-right">
+                    <button class="icon-btn" id="receiverSettingsBtn">
+                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
                 </div>
-                <button class="copy-btn" id="copyUsbCommand">Copy Command</button>
+            </div>
+            
+            <!-- Connection Panel -->
+            <div id="receiverConnectionPanel" style="position: absolute; top: 100px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.8); padding: 25px; border-radius: 15px; backdrop-filter: blur(10px); text-align: center; min-width: 300px;">
+                <div style="font-size: 40px; margin-bottom: 15px;">📱</div>
+                <div style="font-size: 20px; font-weight: 600; margin-bottom: 10px;">Connect to Phone Camera</div>
+                <div style="color: #aaa; margin-bottom: 20px;">Enter Connection ID from your phone</div>
+                
+                <div style="margin-bottom: 15px;">
+                    <input type="text" id="receiverConnectionIdInput" placeholder="Connection ID" style="width: 100%; padding: 12px; border-radius: 8px; border: 1px solid #4a90e2; background: rgba(255,255,255,0.1); color: white; text-align: center; font-size: 16px;">
+                </div>
+                
+                <div style="display: flex; gap: 10px;">
+                    <button id="receiverConnectBtn" class="btn btn-primary" style="flex: 1;">
+                        Connect
+                    </button>
+                    <button id="receiverBackBtn" class="btn btn-secondary" style="flex: 1;">
+                        Back
+                    </button>
+                </div>
+                
+                <div style="margin-top: 20px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 14px; color: #aaa; margin-bottom: 10px;">Or scan QR code on phone:</div>
+                    <div id="receiverActiveQrCode" class="qr-code-wrapper" style="display: inline-block;">
+                        <!-- QR Code akan ditampilkan di sini -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Stream Info Panel (shown when connected) -->
+            <div id="streamInfoPanel" style="position: absolute; top: 100px; left: 20px; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px); max-width: 300px; display: none;">
+                <div style="font-weight: 600; margin-bottom: 10px; color: #4a90e2;">📹 Stream Info</div>
+                <div style="margin-bottom: 5px; font-size: 14px;">Connected to: <span id="connectedToDevice" style="font-weight: bold;">Phone</span></div>
+                <div style="margin-bottom: 5px; font-size: 14px;">Status: <span id="streamStatus" style="color: #4caf50;">Live</span></div>
+                <div style="margin-bottom: 5px; font-size: 14px;">Resolution: <span id="streamResolution">1280x720</span></div>
+                <div style="font-size: 12px; color: #aaa;">Streaming from mobile phone</div>
             </div>
         </div>
     </div>
@@ -1194,33 +1012,52 @@
         </div>
         
         <div class="settings-section">
-            <div class="section-title">Camera Settings</div>
+            <div class="section-title">Device Role</div>
             
             <div class="settings-item">
-                <label class="settings-label">Select Camera</label>
-                <select class="settings-select" id="cameraSelect">
-                    <option value="">Loading cameras...</option>
-                </select>
+                <div class="settings-label">Current Role</div>
+                <div id="currentRole" style="padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-top: 5px;">
+                    <span id="roleText">Mobile Phone (Sender)</span>
+                </div>
             </div>
             
             <div class="settings-item">
-                <label class="settings-label">Resolution</label>
-                <select class="settings-select" id="resolutionSelect">
-                    <option value="hd">HD (1280x720)</option>
-                    <option value="fullhd" selected>Full HD (1920x1080)</option>
-                    <option value="max">Maximum Available</option>
+                <div class="settings-label">Switch Role</div>
+                <button class="btn btn-secondary" id="switchRoleBtn" style="width: 100%; margin-top: 10px;">
+                    Switch to Receiver Role
+                </button>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="section-title">Stream Settings</div>
+            
+            <div class="settings-item">
+                <label class="settings-label">Video Quality</label>
+                <select class="settings-select" id="qualitySelect">
+                    <option value="low">Low (480p) - Faster</option>
+                    <option value="medium" selected>Medium (720p) - Balanced</option>
+                    <option value="high">High (1080p) - Better Quality</option>
+                    <option value="veryhigh">Very High (Max) - Best Quality</option>
                 </select>
-                <div class="info-text">USB: Recommended Full HD or Max</div>
             </div>
             
             <div class="settings-item">
                 <label class="settings-label">Frame Rate</label>
-                <select class="settings-select" id="frameRateSelect">
+                <select class="settings-select" id="fpsSelect">
+                    <option value="15">15 fps</option>
                     <option value="24">24 fps</option>
                     <option value="30" selected>30 fps</option>
-                    <option value="60">60 fps</option>
+                    <option value="60">60 fps (High-end devices)</option>
                 </select>
-                <div class="info-text">USB supports higher frame rates</div>
+            </div>
+            
+            <div class="settings-item">
+                <label class="settings-label">Camera</label>
+                <select class="settings-select" id="cameraSelect">
+                    <option value="user">Front Camera</option>
+                    <option value="environment">Back Camera</option>
+                </select>
             </div>
         </div>
         
@@ -1228,70 +1065,24 @@
             <div class="section-title">Connection</div>
             
             <div class="settings-item">
-                <div class="settings-label">Connection Type</div>
-                <div id="currentConnectionType" style="padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-top: 5px;">
-                    WiFi Connection
-                </div>
+                <div class="settings-label">Connection ID</div>
+                <div class="url-display" id="settingsConnectionId">Loading...</div>
+                <button class="copy-btn" id="copyConnectionIdBtn">Copy Connection ID</button>
             </div>
             
             <div class="settings-item">
-                <div class="settings-label">Server URL for OBS/vMix</div>
-                <div class="url-display" id="serverUrl">http://192.168.1.100:8080</div>
-                <div class="info-text" id="connectionInfo">Use this URL in OBS Browser Source</div>
-                <button class="copy-btn" id="copyUrlBtn">Copy URL</button>
-            </div>
-            
-            <div class="settings-item">
-                <div class="settings-label">USB Port (ADB Forward)</div>
-                <select class="settings-select" id="usbPortSelect">
-                    <option value="8080" selected>Port 8080 (Default)</option>
-                    <option value="8081">Port 8081</option>
-                    <option value="8082">Port 8082</option>
-                    <option value="8083">Port 8083</option>
-                </select>
-                <div class="info-text">Change if port 8080 is already in use</div>
+                <div class="settings-label">OBS Browser Source URL</div>
+                <div class="url-display" id="settingsObsUrl">http://localhost:8080</div>
+                <button class="copy-btn" id="copyObsUrlBtn">Copy OBS URL</button>
             </div>
         </div>
         
-        <div class="settings-section">
-            <div class="section-title">Video Settings</div>
-            
-            <div class="settings-item">
-                <label class="settings-label">Zoom Level</label>
-                <input type="range" id="zoomSlider" class="settings-select" min="100" max="400" value="100">
-                <div class="info-text" id="zoomValueText">Current: 1.0x</div>
-            </div>
-            
-            <div class="settings-item">
-                <label class="settings-label">Mirror Mode</label>
-                <select class="settings-select" id="mirrorMode">
-                    <option value="auto">Auto (Front camera mirrored)</option>
-                    <option value="on">Always On</option>
-                    <option value="off">Always Off</option>
-                </select>
-            </div>
-            
-            <div class="settings-item">
-                <label class="settings-label">Video Quality</label>
-                <select class="settings-select" id="videoQuality">
-                    <option value="balanced" selected>Balanced</option>
-                    <option value="quality">Prioritize Quality</option>
-                    <option value="performance">Prioritize Performance</option>
-                </select>
-                <div class="info-text">USB: Use "Quality" for best results</div>
-            </div>
-        </div>
-        
-        <button id="restartCamera" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
-            Restart Camera
+        <button id="restartStreamBtn" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+            Restart Stream
         </button>
         
-        <button id="switchConnection" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
-            Switch to WiFi Connection
-        </button>
-        
-        <button id="showUsbGuideFromSettings" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
-            USB Debugging Guide
+        <button id="disconnectBtn" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
+            Disconnect
         </button>
     </div>
     
@@ -1301,103 +1092,194 @@
     <script>
         // State Management
         let state = {
-            isCameraActive: false,
-            currentStream: null,
-            currentDeviceId: null,
-            videoDevices: [],
-            zoomLevel: 1.0,
-            isRecording: false,
-            isFrontCamera: true,
+            role: 'sender', // 'sender' or 'receiver'
+            isStreaming: false,
+            localStream: null,
+            peerConnection: null,
+            dataChannel: null,
+            connectionId: null,
+            currentCamera: 'user',
             isFlashOn: false,
-            connectionType: 'wifi', // 'wifi' or 'usb'
-            serverUrl: '',
-            cameraSettings: {
-                resolution: 'fullhd',
-                frameRate: 30,
-                mirrorMode: 'auto',
-                videoQuality: 'balanced',
-                usbPort: 8080
+            streamSettings: {
+                quality: 'medium',
+                fps: 30,
+                camera: 'user'
             },
-            usbConnected: false
+            connectedReceivers: 0,
+            isConnected: false
         };
         
         // DOM Elements
         const loadingScreen = document.getElementById('loadingScreen');
         const connectionScreen = document.getElementById('connectionScreen');
-        const cameraScreen = document.getElementById('cameraScreen');
+        const senderCameraScreen = document.getElementById('senderCameraScreen');
+        const receiverViewScreen = document.getElementById('receiverViewScreen');
         const settingsPanel = document.getElementById('settingsPanel');
-        const usbDebugPanel = document.getElementById('usbDebugPanel');
-        const usbGuideModal = document.getElementById('usbGuideModal');
-        const video = document.getElementById('video');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        const serverInfo = document.getElementById('serverInfo');
-        const serverUrlDisplay = document.getElementById('serverUrl');
-        const connectionInfo = document.getElementById('connectionInfo');
-        const currentConnectionType = document.getElementById('currentConnectionType');
         const notification = document.getElementById('notification');
+        
+        // Video Elements
+        const senderVideo = document.getElementById('senderVideo');
+        const receiverVideo = document.getElementById('receiverVideo');
         
         // Connection Tabs
         const connectionTabs = document.querySelectorAll('.connection-tab');
-        const wifiTab = document.getElementById('wifiTab');
-        const usbTab = document.getElementById('usbTab');
+        const senderTab = document.getElementById('senderTab');
+        const receiverTab = document.getElementById('receiverTab');
         
-        // Control Buttons
-        const startCameraWifi = document.getElementById('startCameraWifi');
-        const startCameraUsb = document.getElementById('startCameraUsb');
-        const showUsbGuide = document.getElementById('showUsbGuide');
-        const showUsbGuideFromSettings = document.getElementById('showUsbGuideFromSettings');
-        const closeUsbGuide = document.getElementById('closeUsbGuide');
-        const copyAllCommands = document.getElementById('copyAllCommands');
-        const startFromGuide = document.getElementById('startFromGuide');
-        const settingsBtn = document.getElementById('settingsBtn');
-        const toggleSettings = document.getElementById('toggleSettings');
+        // Sender Elements
+        const startSenderCamera = document.getElementById('startSenderCamera');
+        const senderQrCode = document.getElementById('senderQrCode');
+        const senderConnectionId = document.getElementById('senderConnectionId');
+        const senderSwitchCamera = document.getElementById('senderSwitchCamera');
+        const senderFlashToggle = document.getElementById('senderFlashToggle');
+        const senderDisconnectBtn = document.getElementById('senderDisconnectBtn');
+        const senderSettingsBtn = document.getElementById('senderSettingsBtn');
+        const senderStatusDot = document.getElementById('senderStatusDot');
+        const senderStatusText = document.getElementById('senderStatusText');
+        const connectedReceivers = document.getElementById('connectedReceivers');
+        const senderConnectedCount = document.getElementById('senderConnectedCount');
+        const displayConnectionId = document.getElementById('displayConnectionId');
+        
+        // Receiver Elements
+        const connectToSender = document.getElementById('connectToSender');
+        const copyReceiverUrl = document.getElementById('copyReceiverUrl');
+        const receiverQrCode = document.getElementById('receiverQrCode');
+        const receiverObsUrl = document.getElementById('receiverObsUrl');
+        const receiverSettingsBtn = document.getElementById('receiverSettingsBtn');
+        const receiverStatusDot = document.getElementById('receiverStatusDot');
+        const receiverStatusText = document.getElementById('receiverStatusText');
+        const receiverStreamInfo = document.getElementById('receiverStreamInfo');
+        const connectionIdInput = document.getElementById('connectionIdInput');
+        const receiverConnectionIdInput = document.getElementById('receiverConnectionIdInput');
+        const receiverConnectBtn = document.getElementById('receiverConnectBtn');
+        const receiverBackBtn = document.getElementById('receiverBackBtn');
+        const receiverActiveQrCode = document.getElementById('receiverActiveQrCode');
+        const receiverConnectionPanel = document.getElementById('receiverConnectionPanel');
+        const streamInfoPanel = document.getElementById('streamInfoPanel');
+        const connectedToDevice = document.getElementById('connectedToDevice');
+        const streamStatus = document.getElementById('streamStatus');
+        const streamResolution = document.getElementById('streamResolution');
+        
+        // Settings Elements
         const closeSettings = document.getElementById('closeSettings');
-        const switchCamera = document.getElementById('switchCamera');
-        const recordBtn = document.getElementById('recordBtn');
-        const flashToggle = document.getElementById('flashToggle');
-        const restartCameraBtn = document.getElementById('restartCamera');
-        const switchConnection = document.getElementById('switchConnection');
-        const toggleUsbPanel = document.getElementById('toggleUsbPanel');
-        
-        // Zoom Controls
-        const zoomInBtn = document.getElementById('zoomInBtn');
-        const zoomOutBtn = document.getElementById('zoomOutBtn');
-        const zoomSlider = document.getElementById('zoomSlider');
-        const zoomValueText = document.getElementById('zoomValueText');
-        
-        // USB Controls
-        const usbStatusDot = document.getElementById('usbStatusDot');
-        const usbStatusText = document.getElementById('usbStatusText');
-        const usbCommandDisplay = document.getElementById('usbCommandDisplay');
-        const copyUsbCommand = document.getElementById('copyUsbCommand');
-        const usbPortSelect = document.getElementById('usbPortSelect');
-        
-        // Settings Controls
+        const switchRoleBtn = document.getElementById('switchRoleBtn');
+        const restartStreamBtn = document.getElementById('restartStreamBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const qualitySelect = document.getElementById('qualitySelect');
+        const fpsSelect = document.getElementById('fpsSelect');
         const cameraSelect = document.getElementById('cameraSelect');
-        const resolutionSelect = document.getElementById('resolutionSelect');
-        const frameRateSelect = document.getElementById('frameRateSelect');
-        const mirrorMode = document.getElementById('mirrorMode');
-        const videoQuality = document.getElementById('videoQuality');
-        const copyUrlBtn = document.getElementById('copyUrlBtn');
+        const currentRole = document.getElementById('currentRole');
+        const roleText = document.getElementById('roleText');
+        const settingsConnectionId = document.getElementById('settingsConnectionId');
+        const settingsObsUrl = document.getElementById('settingsObsUrl');
+        const copyConnectionIdBtn = document.getElementById('copyConnectionIdBtn');
+        const copyObsUrlBtn = document.getElementById('copyObsUrlBtn');
+        
+        // Generate unique connection ID
+        function generateConnectionId() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+        
+        // Generate QR Code
+        function generateQRCode(text, elementId, size = 200) {
+            try {
+                // Clear previous QR code
+                const element = document.getElementById(elementId);
+                if (!element) return;
+                
+                element.innerHTML = '';
+                
+                // Generate QR code using qrcode-generator library
+                const typeNumber = 4; // Type number (1-40)
+                const errorCorrectionLevel = 'L'; // Error correction level: L, M, Q, H
+                
+                const qr = qrcode(typeNumber, errorCorrectionLevel);
+                qr.addData(text);
+                qr.make();
+                
+                // Create QR code image
+                const img = document.createElement('img');
+                img.src = qr.createDataURL();
+                img.className = 'qr-code-img';
+                img.alt = 'QR Code';
+                img.style.width = size + 'px';
+                img.style.height = size + 'px';
+                
+                element.appendChild(img);
+                
+                console.log('QR Code generated for:', text.substring(0, 20) + '...');
+                
+            } catch (error) {
+                console.error('Error generating QR code:', error);
+                // Fallback: show text
+                const element = document.getElementById(elementId);
+                if (element) {
+                    element.innerHTML = `<div style="color: black; text-align: center; padding: 20px;">
+                        <div style="font-weight: bold; margin-bottom: 10px;">Connection ID:</div>
+                        <div style="font-family: monospace; font-size: 18px;">${text}</div>
+                    </div>`;
+                }
+            }
+        }
         
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
+            // Generate unique connection ID
+            state.connectionId = generateConnectionId();
+            
             // Hide loading screen after 2 seconds
             setTimeout(() => {
                 loadingScreen.style.display = 'none';
                 connectionScreen.style.display = 'flex';
+                
+                // Auto-detect device type
+                detectDeviceType();
+                
+                // Update connection info
+                updateConnectionInfo();
+                
+                // Generate initial QR codes
+                generateAllQRCodes();
+                
             }, 2000);
-            
-            // Initialize camera devices
-            await initializeCameraDevices();
             
             // Setup event listeners
             setupEventListeners();
-            
-            // Update server URL
-            updateServerUrl();
         });
+        
+        // Detect device type
+        function detectDeviceType() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            if (isMobile) {
+                // Auto-select sender tab for mobile
+                connectionTabs.forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.connection-tab[data-tab="sender"]').classList.add('active');
+                senderTab.classList.add('active');
+                receiverTab.classList.remove('active');
+                state.role = 'sender';
+                updateRoleText('Mobile Phone (Sender)');
+            } else {
+                // Auto-select receiver tab for computer
+                connectionTabs.forEach(tab => tab.classList.remove('active'));
+                document.querySelector('.connection-tab[data-tab="receiver"]').classList.add('active');
+                receiverTab.classList.add('active');
+                senderTab.classList.remove('active');
+                state.role = 'receiver';
+                updateRoleText('Computer (Receiver)');
+            }
+        }
+        
+        // Update role text
+        function updateRoleText(text) {
+            roleText.textContent = text;
+            currentRole.querySelector('#roleText').textContent = text;
+        }
         
         // Setup event listeners
         function setupEventListeners() {
@@ -1411,240 +1293,214 @@
                     tab.classList.add('active');
                     
                     // Show corresponding content
-                    wifiTab.classList.remove('active');
-                    usbTab.classList.remove('active');
+                    senderTab.classList.remove('active');
+                    receiverTab.classList.remove('active');
                     
-                    if (tabId === 'wifi') {
-                        wifiTab.classList.add('active');
-                        state.connectionType = 'wifi';
+                    if (tabId === 'sender') {
+                        senderTab.classList.add('active');
+                        state.role = 'sender';
+                        updateRoleText('Mobile Phone (Sender)');
                     } else {
-                        usbTab.classList.add('active');
-                        state.connectionType = 'usb';
+                        receiverTab.classList.add('active');
+                        state.role = 'receiver';
+                        updateRoleText('Computer (Receiver)');
                     }
                     
-                    updateServerUrl();
+                    // Update connection info
+                    updateConnectionInfo();
+                    
+                    // Regenerate QR codes
+                    generateAllQRCodes();
                 });
             });
             
-            // Start camera buttons
-            startCameraWifi.addEventListener('click', () => {
-                state.connectionType = 'wifi';
-                startCamera();
+            // Start sender camera
+            startSenderCamera.addEventListener('click', startSenderStream);
+            
+            // Connect to sender
+            connectToSender.addEventListener('click', connectToSenderStream);
+            
+            // Copy receiver URL
+            copyReceiverUrl.addEventListener('click', () => {
+                copyToClipboard(receiverObsUrl.textContent, 'OBS URL copied to clipboard!');
             });
             
-            startCameraUsb.addEventListener('click', () => {
-                state.connectionType = 'usb';
-                startCamera();
+            // Sender camera controls
+            senderSwitchCamera.addEventListener('click', switchSenderCamera);
+            senderFlashToggle.addEventListener('click', toggleSenderFlash);
+            senderDisconnectBtn.addEventListener('click', stopSenderStream);
+            senderSettingsBtn.addEventListener('click', () => {
+                settingsPanel.classList.add('active');
+                updateSettingsPanel();
             });
             
-            // USB Guide buttons
-            showUsbGuide.addEventListener('click', () => {
-                usbGuideModal.classList.add('active');
+            // Receiver controls
+            receiverConnectBtn.addEventListener('click', connectReceiver);
+            receiverBackBtn.addEventListener('click', () => {
+                receiverViewScreen.style.display = 'none';
+                connectionScreen.style.display = 'flex';
+            });
+            receiverSettingsBtn.addEventListener('click', () => {
+                settingsPanel.classList.add('active');
+                updateSettingsPanel();
             });
             
-            showUsbGuideFromSettings.addEventListener('click', () => {
-                settingsPanel.classList.remove('active');
-                usbGuideModal.classList.add('active');
+            // Connection ID input
+            connectionIdInput.addEventListener('input', (e) => {
+                // Auto-uppercase
+                e.target.value = e.target.value.toUpperCase();
             });
             
-            closeUsbGuide.addEventListener('click', () => {
-                usbGuideModal.classList.remove('active');
-            });
-            
-            copyAllCommands.addEventListener('click', copyAllUsbCommands);
-            startFromGuide.addEventListener('click', () => {
-                state.connectionType = 'usb';
-                usbGuideModal.classList.remove('active');
-                startCamera();
+            receiverConnectionIdInput.addEventListener('input', (e) => {
+                // Auto-uppercase
+                e.target.value = e.target.value.toUpperCase();
             });
             
             // Settings buttons
-            settingsBtn.addEventListener('click', () => {
-                settingsPanel.classList.add('active');
-                updateSettingsPanel();
-            });
-            
-            toggleSettings.addEventListener('click', () => {
-                settingsPanel.classList.add('active');
-                updateSettingsPanel();
-            });
-            
             closeSettings.addEventListener('click', () => settingsPanel.classList.remove('active'));
-            
-            // Camera controls
-            switchCamera.addEventListener('click', switchCameraDevice);
-            recordBtn.addEventListener('click', toggleRecording);
-            flashToggle.addEventListener('click', toggleFlash);
-            restartCameraBtn.addEventListener('click', restartCamera);
-            switchConnection.addEventListener('click', switchToConnectionScreen);
-            toggleUsbPanel.addEventListener('click', () => {
-                usbDebugPanel.style.display = usbDebugPanel.style.display === 'block' ? 'none' : 'block';
+            switchRoleBtn.addEventListener('click', switchRole);
+            restartStreamBtn.addEventListener('click', restartCurrentStream);
+            disconnectBtn.addEventListener('click', disconnectCurrent);
+            copyConnectionIdBtn.addEventListener('click', () => {
+                copyToClipboard(state.connectionId, 'Connection ID copied to clipboard!');
             });
-            
-            // Zoom controls
-            zoomInBtn.addEventListener('click', () => adjustZoom(0.1));
-            zoomOutBtn.addEventListener('click', () => adjustZoom(-0.1));
-            zoomSlider.addEventListener('input', handleZoomSlider);
-            
-            // USB controls
-            copyUsbCommand.addEventListener('click', copyUsbCommandToClipboard);
-            usbPortSelect.addEventListener('change', (e) => {
-                state.cameraSettings.usbPort = parseInt(e.target.value);
-                updateServerUrl();
-                updateUsbCommand();
+            copyObsUrlBtn.addEventListener('click', () => {
+                const obsUrl = window.location.origin + window.location.pathname + '?view=' + state.connectionId;
+                copyToClipboard(obsUrl, 'OBS URL copied to clipboard!');
             });
             
             // Settings changes
+            qualitySelect.addEventListener('change', (e) => {
+                state.streamSettings.quality = e.target.value;
+                if (state.role === 'sender' && state.isStreaming) {
+                    restartSenderStream();
+                }
+            });
+            
+            fpsSelect.addEventListener('change', (e) => {
+                state.streamSettings.fps = parseInt(e.target.value);
+                if (state.role === 'sender' && state.isStreaming) {
+                    restartSenderStream();
+                }
+            });
+            
             cameraSelect.addEventListener('change', (e) => {
-                state.currentDeviceId = e.target.value;
-                if (state.isCameraActive) {
-                    restartCamera();
+                state.streamSettings.camera = e.target.value;
+                state.currentCamera = e.target.value;
+                if (state.role === 'sender' && state.isStreaming) {
+                    restartSenderStream();
                 }
             });
             
-            resolutionSelect.addEventListener('change', (e) => {
-                state.cameraSettings.resolution = e.target.value;
-                if (state.isCameraActive) {
-                    restartCamera();
-                }
-            });
-            
-            frameRateSelect.addEventListener('change', (e) => {
-                state.cameraSettings.frameRate = parseInt(e.target.value);
-                if (state.isCameraActive) {
-                    restartCamera();
-                }
-            });
-            
-            mirrorMode.addEventListener('change', (e) => {
-                state.cameraSettings.mirrorMode = e.target.value;
-                updateVideoTransform();
-            });
-            
-            videoQuality.addEventListener('change', (e) => {
-                state.cameraSettings.videoQuality = e.target.value;
-                if (state.isCameraActive) {
-                    restartCamera();
-                }
-            });
-            
-            copyUrlBtn.addEventListener('click', copyUrlToClipboard);
-            
-            // Close modal when clicking outside
-            usbGuideModal.addEventListener('click', (e) => {
-                if (e.target === usbGuideModal) {
-                    usbGuideModal.classList.remove('active');
+            // Close settings on outside click
+            settingsPanel.addEventListener('click', (e) => {
+                if (e.target === settingsPanel) {
+                    settingsPanel.classList.remove('active');
                 }
             });
         }
         
-        // Copy all USB commands to clipboard
-        async function copyAllUsbCommands() {
-            const commands = `# Android USB Debugging Commands
-
-# Step 1: Check if device is detected
-adb devices
-
-# Step 2: Forward port (use your chosen port)
-adb forward tcp:${state.cameraSettings.usbPort} tcp:${state.cameraSettings.usbPort}
-
-# Step 3: Start camera in web app and use this URL in OBS:
-http://localhost:${state.cameraSettings.usbPort}
-
-# Step 4: To stop port forwarding
-adb forward --remove tcp:${state.cameraSettings.usbPort}`;
+        // Update connection info
+        function updateConnectionInfo() {
+            const baseUrl = window.location.origin + window.location.pathname;
             
-            try {
-                await navigator.clipboard.writeText(commands);
-                showNotification('All USB commands copied to clipboard!', 'success');
-            } catch (err) {
-                showNotification('Failed to copy commands: ' + err, 'error');
+            // Update sender connection ID
+            senderConnectionId.textContent = state.connectionId;
+            displayConnectionId.textContent = state.connectionId;
+            settingsConnectionId.textContent = state.connectionId;
+            
+            // Update receiver OBS URL
+            const obsUrlValue = `${baseUrl}?view=${state.connectionId}`;
+            receiverObsUrl.textContent = obsUrlValue;
+            settingsObsUrl.textContent = obsUrlValue;
+            
+            // Update connection ID input placeholder
+            if (connectionIdInput) {
+                connectionIdInput.placeholder = `Masukkan Connection ID (contoh: ${state.connectionId})`;
             }
+        }
+        
+        // Generate all QR codes
+        function generateAllQRCodes() {
+            const baseUrl = window.location.origin + window.location.pathname;
+            
+            // Generate sender QR code (for receiver to connect)
+            const senderQrText = `${baseUrl}?connect=${state.connectionId}&role=receiver`;
+            generateQRCode(senderQrText, 'senderQrCode', 180);
+            
+            // Generate receiver QR code (for sender to connect back)
+            const receiverQrText = `${baseUrl}?connect=${state.connectionId}&role=sender`;
+            generateQRCode(receiverQrText, 'receiverQrCode', 180);
+            
+            // Generate active receiver QR code
+            generateQRCode(receiverQrText, 'receiverActiveQrCode', 150);
         }
         
         // Update settings panel
         function updateSettingsPanel() {
-            // Update connection type display
-            currentConnectionType.textContent = state.connectionType === 'wifi' ? 'WiFi Connection' : 'USB Debugging';
-            currentConnectionType.style.background = state.connectionType === 'wifi' 
-                ? 'rgba(76, 175, 80, 0.2)' 
-                : 'rgba(33, 150, 243, 0.2)';
+            // Update role text
+            if (state.role === 'sender') {
+                updateRoleText('Mobile Phone (Sender)');
+                switchRoleBtn.textContent = 'Switch to Receiver Role';
+            } else {
+                updateRoleText('Computer (Receiver)');
+                switchRoleBtn.textContent = 'Switch to Sender Role';
+            }
             
-            // Update switch button text
-            switchConnection.textContent = state.connectionType === 'wifi' 
-                ? 'Switch to USB Debugging' 
-                : 'Switch to WiFi Connection';
+            // Update settings values
+            qualitySelect.value = state.streamSettings.quality;
+            fpsSelect.value = state.streamSettings.fps.toString();
+            cameraSelect.value = state.streamSettings.camera;
             
             // Update connection info
-            if (state.connectionType === 'usb') {
-                connectionInfo.textContent = 'Use http://localhost:' + state.cameraSettings.usbPort + ' in OBS Browser Source';
-            }
+            settingsConnectionId.textContent = state.connectionId;
+            const baseUrl = window.location.origin + window.location.pathname;
+            settingsObsUrl.textContent = `${baseUrl}?view=${state.connectionId}`;
         }
         
-        // Start camera function
-        async function startCamera() {
+        // Start sender stream
+        async function startSenderStream() {
             try {
                 loadingScreen.style.display = 'flex';
-                connectionScreen.style.display = 'none';
                 
-                // Stop existing stream if any
-                if (state.currentStream) {
-                    state.currentStream.getTracks().forEach(track => track.stop());
-                    state.isFlashOn = false; // Reset flash state
-                    flashToggle.classList.remove('flash-active');
-                }
-                
-                // Get constraints based on settings
-                const constraints = getCameraConstraints();
-                
-                // Get media stream
+                // Get camera stream
+                const constraints = getSenderCameraConstraints();
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
-                state.currentStream = stream;
-                state.isCameraActive = true;
+                state.localStream = stream;
+                state.isStreaming = true;
                 
                 // Set video source
-                video.srcObject = stream;
-                
-                // Wait for video to load
-                await new Promise((resolve) => {
-                    video.onloadedmetadata = () => {
-                        video.play();
-                        resolve();
-                    };
-                });
+                senderVideo.srcObject = stream;
+                await senderVideo.play();
                 
                 // Update UI
-                updateConnectionStatus();
-                updateVideoTransform();
-                updateServerInfo();
+                senderStatusDot.className = 'status-dot wifi';
+                senderStatusText.textContent = 'Streaming Active';
+                connectedReceivers.textContent = 'Waiting for connection...';
                 
-                // Update USB status
-                if (state.connectionType === 'usb') {
-                    updateUsbStatus();
-                    usbDebugPanel.style.display = 'block';
-                    // Start checking USB connection
-                    checkUsbConnection();
-                    setInterval(checkUsbConnection, 5000);
-                }
+                // Start simulated connection (for demo)
+                startSimulatedConnection();
                 
-                // Show camera screen
+                // Show sender camera screen
                 loadingScreen.style.display = 'none';
-                cameraScreen.style.display = 'flex';
+                connectionScreen.style.display = 'none';
+                senderCameraScreen.style.display = 'block';
                 
-                showNotification('Camera started successfully! (' + state.connectionType.toUpperCase() + ')', 'success');
+                showNotification('📹 Camera stream started! Share Connection ID: ' + state.connectionId, 'success');
                 
             } catch (error) {
-                console.error('Error starting camera:', error);
+                console.error('Error starting sender stream:', error);
                 loadingScreen.style.display = 'none';
-                connectionScreen.style.display = 'flex';
                 
                 let errorMessage = 'Failed to start camera: ';
                 if (error.name === 'NotAllowedError') {
-                    errorMessage += 'Camera permission denied';
+                    errorMessage = 'Camera permission denied. Please allow camera access.';
                 } else if (error.name === 'NotFoundError') {
-                    errorMessage += 'No camera found';
+                    errorMessage = 'No camera found on this device.';
                 } else if (error.name === 'NotReadableError') {
-                    errorMessage += 'Camera is already in use';
+                    errorMessage = 'Camera is already in use by another app.';
+                } else if (error.name === 'OverconstrainedError') {
+                    errorMessage = 'Cannot match camera constraints. Try changing settings.';
                 } else {
                     errorMessage += error.message;
                 }
@@ -1653,400 +1509,364 @@ adb forward --remove tcp:${state.cameraSettings.usbPort}`;
             }
         }
         
-        // Get camera constraints based on settings
-        function getCameraConstraints() {
+        // Get sender camera constraints
+        function getSenderCameraConstraints() {
             const constraints = {
                 video: {
-                    deviceId: state.currentDeviceId ? { exact: state.currentDeviceId } : undefined
+                    facingMode: state.currentCamera,
+                    width: { ideal: 1280 },
+                    height: { ideal: 720 },
+                    frameRate: { ideal: state.streamSettings.fps }
                 },
                 audio: false
             };
             
-            // Add resolution constraints
-            switch (state.cameraSettings.resolution) {
-                case 'hd':
+            // Adjust quality based on settings
+            switch (state.streamSettings.quality) {
+                case 'low':
+                    constraints.video.width = { ideal: 640 };
+                    constraints.video.height = { ideal: 480 };
+                    break;
+                case 'medium':
                     constraints.video.width = { ideal: 1280 };
                     constraints.video.height = { ideal: 720 };
                     break;
-                case 'fullhd':
+                case 'high':
                     constraints.video.width = { ideal: 1920 };
                     constraints.video.height = { ideal: 1080 };
                     break;
-                case 'max':
-                    // For USB, try to get maximum resolution
-                    if (state.connectionType === 'usb') {
-                        constraints.video.width = { ideal: 3840 };
-                        constraints.video.height = { ideal: 2160 };
-                    } else {
-                        constraints.video.width = { ideal: 1920 };
-                        constraints.video.height = { ideal: 1080 };
-                    }
+                case 'veryhigh':
+                    // Use device maximum - no constraints
+                    delete constraints.video.width;
+                    delete constraints.video.height;
                     break;
-            }
-            
-            // Add frame rate constraint (USB can handle higher FPS)
-            const targetFps = state.connectionType === 'usb' 
-                ? Math.min(state.cameraSettings.frameRate, 60)
-                : Math.min(state.cameraSettings.frameRate, 30);
-            
-            constraints.video.frameRate = { ideal: targetFps };
-            
-            // Add quality settings for USB
-            if (state.connectionType === 'usb') {
-                switch (state.cameraSettings.videoQuality) {
-                    case 'quality':
-                        constraints.video.width = { ideal: 3840 };
-                        constraints.video.height = { ideal: 2160 };
-                        break;
-                    case 'performance':
-                        constraints.video.width = { ideal: 1280 };
-                        constraints.video.height = { ideal: 720 };
-                        constraints.video.frameRate = { ideal: 60 };
-                        break;
-                }
             }
             
             return constraints;
         }
         
-        // Update connection status display
-        function updateConnectionStatus() {
-            if (state.connectionType === 'wifi') {
-                statusDot.className = 'status-dot wifi';
-                statusText.textContent = 'WiFi LIVE';
-                statusDot.style.animation = 'pulse 2s infinite';
-            } else {
-                statusDot.className = 'status-dot usb';
-                statusText.textContent = 'USB LIVE';
-                statusDot.style.animation = 'pulse 1s infinite';
-            }
+        // Start simulated connection (for demo)
+        function startSimulatedConnection() {
+            // Simulate connection status updates
+            let connectedCount = 0;
+            
+            setInterval(() => {
+                // Simulate random connection changes
+                if (Math.random() > 0.7 && connectedCount < 3) {
+                    connectedCount++;
+                    state.connectedReceivers = connectedCount;
+                    updateSenderConnectionStatus();
+                } else if (Math.random() > 0.9 && connectedCount > 0) {
+                    connectedCount--;
+                    state.connectedReceivers = connectedCount;
+                    updateSenderConnectionStatus();
+                }
+            }, 3000);
         }
         
-        // Update USB status display
-        function updateUsbStatus() {
-            if (state.usbConnected) {
-                usbStatusDot.className = 'usb-status-dot connected';
-                usbStatusText.textContent = 'USB Connected';
-                usbCommandDisplay.textContent = `Forwarding: localhost:${state.cameraSettings.usbPort}`;
-            } else {
-                usbStatusDot.className = 'usb-status-dot';
-                usbStatusText.textContent = 'USB Not Connected';
-                usbCommandDisplay.textContent = `Run: adb forward tcp:${state.cameraSettings.usbPort} tcp:${state.cameraSettings.usbPort}`;
-            }
+        // Update sender connection status
+        function updateSenderConnectionStatus() {
+            const count = state.connectedReceivers;
+            connectedReceivers.textContent = count === 0 
+                ? 'Waiting for connection...' 
+                : `${count} device${count !== 1 ? 's' : ''} connected`;
+            senderConnectedCount.textContent = count;
         }
         
-        // Update USB command display
-        function updateUsbCommand() {
-            usbCommandDisplay.textContent = `adb forward tcp:${state.cameraSettings.usbPort} tcp:${state.cameraSettings.usbPort}`;
-        }
-        
-        // Check USB connection periodically
-        async function checkUsbConnection() {
-            if (state.connectionType !== 'usb' || !state.isCameraActive) return;
+        // Switch sender camera
+        async function switchSenderCamera() {
+            if (!state.localStream) return;
+            
+            state.currentCamera = state.currentCamera === 'user' ? 'environment' : 'user';
+            state.streamSettings.camera = state.currentCamera;
+            cameraSelect.value = state.currentCamera;
             
             try {
-                const port = state.cameraSettings.usbPort;
-                const testUrl = `http://localhost:${port}`;
+                // Stop current tracks
+                state.localStream.getTracks().forEach(track => track.stop());
                 
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 1000);
+                // Get new camera stream
+                const constraints = getSenderCameraConstraints();
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                state.localStream = stream;
+                senderVideo.srcObject = stream;
                 
-                await fetch(testUrl, { 
-                    method: 'HEAD',
-                    mode: 'no-cors',
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (!state.usbConnected) {
-                    state.usbConnected = true;
-                    updateUsbStatus();
-                    showNotification('USB connection established!', 'success');
-                }
+                showNotification(`📷 Switched to ${state.currentCamera === 'user' ? 'front' : 'back'} camera`, 'success');
                 
             } catch (error) {
-                if (state.usbConnected) {
-                    state.usbConnected = false;
-                    updateUsbStatus();
-                    showNotification('USB connection lost. Check ADB connection.', 'warning');
-                }
+                console.error('Error switching camera:', error);
+                showNotification('Failed to switch camera', 'error');
+                // Revert camera setting
+                state.currentCamera = state.currentCamera === 'user' ? 'environment' : 'user';
+                state.streamSettings.camera = state.currentCamera;
+                cameraSelect.value = state.currentCamera;
             }
         }
         
-        // Copy USB command to clipboard
-        async function copyUsbCommandToClipboard() {
-            const command = `adb forward tcp:${state.cameraSettings.usbPort} tcp:${state.cameraSettings.usbPort}`;
-            try {
-                await navigator.clipboard.writeText(command);
-                showNotification('ADB command copied to clipboard!', 'success');
-            } catch (err) {
-                showNotification('Failed to copy command: ' + err, 'error');
-            }
-        }
-        
-        // Copy URL to clipboard
-        async function copyUrlToClipboard() {
-            try {
-                await navigator.clipboard.writeText(state.serverUrl);
-                showNotification('URL copied to clipboard!', 'success');
-            } catch (err) {
-                showNotification('Failed to copy URL: ' + err, 'error');
-            }
-        }
-        
-        // Switch to connection screen
-        function switchToConnectionScreen() {
-            if (state.isCameraActive) {
-                state.currentStream.getTracks().forEach(track => track.stop());
-                state.isCameraActive = false;
-                state.isFlashOn = false; // Reset flash state
-                state.isRecording = false; // Reset recording state
-                recordBtn.classList.remove('recording');
-                flashToggle.classList.remove('flash-active');
-            }
-            
-            cameraScreen.style.display = 'none';
-            connectionScreen.style.display = 'flex';
-            settingsPanel.classList.remove('active');
-            
-            // Switch connection type
-            state.connectionType = state.connectionType === 'wifi' ? 'usb' : 'wifi';
-            
-            // Update active tab
-            connectionTabs.forEach(tab => tab.classList.remove('active'));
-            if (state.connectionType === 'wifi') {
-                document.querySelector('.connection-tab[data-tab="wifi"]').classList.add('active');
-                wifiTab.classList.add('active');
-                usbTab.classList.remove('active');
-            } else {
-                document.querySelector('.connection-tab[data-tab="usb"]').classList.add('active');
-                usbTab.classList.add('active');
-                wifiTab.classList.remove('active');
-            }
-            
-            updateServerUrl();
-        }
-        
-        async function initializeCameraDevices() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                stream.getTracks().forEach(track => track.stop());
-                
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                state.videoDevices = devices.filter(device => device.kind === 'videoinput');
-                
-                cameraSelect.innerHTML = '';
-                state.videoDevices.forEach((device, index) => {
-                    const option = document.createElement('option');
-                    option.value = device.deviceId;
-                    
-                    const label = device.label.toLowerCase();
-                    let cameraName = `Camera ${index + 1}`;
-                    
-                    if (label.includes('front') || label.includes('depan')) {
-                        cameraName = `📱 Front Camera`;
-                        state.isFrontCamera = true;
-                    } else if (label.includes('back') || label.includes('rear') || label.includes('belakang')) {
-                        cameraName = `📷 Back Camera`;
-                        state.isFrontCamera = false;
-                    }
-                    
-                    option.textContent = cameraName;
-                    cameraSelect.appendChild(option);
-                });
-                
-                if (state.videoDevices.length > 0) {
-                    state.currentDeviceId = state.videoDevices[0].deviceId;
-                    cameraSelect.value = state.currentDeviceId;
-                }
-                
-            } catch (error) {
-                console.error('Error initializing cameras:', error);
-                showNotification('Error accessing camera: ' + error.message, 'error');
-            }
-        }
-        
-        async function switchCameraDevice() {
-            if (state.videoDevices.length < 2) {
-                showNotification('Only one camera available', 'warning');
-                return;
-            }
-            
-            const currentIndex = state.videoDevices.findIndex(
-                device => device.deviceId === state.currentDeviceId
-            );
-            
-            const nextIndex = (currentIndex + 1) % state.videoDevices.length;
-            state.currentDeviceId = state.videoDevices[nextIndex].deviceId;
-            cameraSelect.value = state.currentDeviceId;
-            
-            const deviceLabel = state.videoDevices[nextIndex].label.toLowerCase();
-            state.isFrontCamera = deviceLabel.includes('front') || deviceLabel.includes('depan');
-            
-            // Reset flash when switching cameras
-            state.isFlashOn = false;
-            flashToggle.classList.remove('flash-active');
-            
-            await restartCamera();
-            showNotification(`Switched to ${state.isFrontCamera ? 'front' : 'back'} camera`, 'success');
-        }
-        
-        async function restartCamera() {
-            if (state.isCameraActive) {
-                await startCamera();
-            }
-        }
-        
-        // Adjust zoom with minimum 1.0x
-        function adjustZoom(delta) {
-            state.zoomLevel = Math.max(1.0, Math.min(4.0, state.zoomLevel + delta));
-            updateZoomDisplay();
-            updateVideoTransform();
-        }
-        
-        function handleZoomSlider() {
-            state.zoomLevel = Math.max(1.0, zoomSlider.value / 100);
-            updateZoomDisplay();
-            updateVideoTransform();
-        }
-        
-        function updateZoomDisplay() {
-            zoomValueText.textContent = `Current: ${state.zoomLevel.toFixed(1)}x`;
-            zoomSlider.value = state.zoomLevel * 100;
-        }
-        
-        function updateVideoTransform() {
-            let transform = '';
-            let shouldMirror = false;
-            
-            switch (state.cameraSettings.mirrorMode) {
-                case 'auto':
-                    shouldMirror = state.isFrontCamera;
-                    break;
-                case 'on':
-                    shouldMirror = true;
-                    break;
-                case 'off':
-                    shouldMirror = false;
-                    break;
-            }
-            
-            if (shouldMirror) {
-                transform += 'scaleX(-1) ';
-            }
-            
-            if (state.zoomLevel !== 1.0) {
-                transform += `scale(${state.zoomLevel})`;
-            }
-            
-            video.style.transform = transform || 'none';
-        }
-        
-        // Toggle recording with pause icon
-        function toggleRecording() {
-            state.isRecording = !state.isRecording;
-            
-            if (state.isRecording) {
-                // Start recording - change to pause icon
-                recordBtn.classList.add('recording');
-                showNotification('Recording started', 'success');
-            } else {
-                // Stop recording - change back to record icon
-                recordBtn.classList.remove('recording');
-                showNotification('Recording stopped', 'info');
-            }
-        }
-        
-        // Flash function - menggunakan teknik simulasi flash
-        async function toggleFlash() {
-            if (!state.isCameraActive) {
-                showNotification('Please start camera first', 'warning');
-                return;
-            }
+        // Toggle sender flash
+        async function toggleSenderFlash() {
+            if (!state.localStream) return;
             
             state.isFlashOn = !state.isFlashOn;
             
-            if (state.isFlashOn) {
-                // Menyalakan flash (simulasi)
-                flashToggle.classList.add('flash-active');
-                
-                // Coba gunakan API torch jika tersedia
-                try {
-                    const videoTrack = state.currentStream.getVideoTracks()[0];
-                    if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
-                        // Coba gunakan torch mode jika didukung
-                        await videoTrack.applyConstraints({
-                            advanced: [{ torch: true }]
-                        });
-                    }
-                } catch (error) {
-                    console.log('Torch not supported, using visual feedback only');
+            try {
+                const videoTrack = state.localStream.getVideoTracks()[0];
+                if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
+                    await videoTrack.applyConstraints({
+                        advanced: [{ torch: state.isFlashOn }]
+                    });
+                    
+                    // Update button style
+                    senderFlashToggle.classList.toggle('flash-active', state.isFlashOn);
+                    showNotification(`🔦 Flash ${state.isFlashOn ? 'ON' : 'OFF'}`, 'success');
                 }
-                
-                // Tambahkan efek visual untuk flash
-                const flashOverlay = document.createElement('div');
-                flashOverlay.id = 'flashOverlay';
-                flashOverlay.style.position = 'fixed';
-                flashOverlay.style.top = '0';
-                flashOverlay.style.left = '0';
-                flashOverlay.style.width = '100%';
-                flashOverlay.style.height = '100%';
-                flashOverlay.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
-                flashOverlay.style.zIndex = '15';
-                flashOverlay.style.pointerEvents = 'none';
-                flashOverlay.style.animation = 'fadeOut 0.3s forwards';
-                
-                document.querySelector('.video-container').appendChild(flashOverlay);
-                
-                // Hapus overlay setelah animasi selesai
-                setTimeout(() => {
-                    if (flashOverlay.parentNode) {
-                        flashOverlay.parentNode.removeChild(flashOverlay);
-                    }
-                }, 300);
-                
-                showNotification('Flash ON', 'success');
-            } else {
-                // Mematikan flash
-                flashToggle.classList.remove('flash-active');
-                
-                // Coba matikan torch jika digunakan
-                try {
-                    const videoTrack = state.currentStream.getVideoTracks()[0];
-                    if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
-                        await videoTrack.applyConstraints({
-                            advanced: [{ torch: false }]
-                        });
-                    }
-                } catch (error) {
-                    console.log('Torch control not available');
-                }
-                
-                showNotification('Flash OFF', 'info');
+            } catch (error) {
+                console.log('Flash not supported on this device');
+                showNotification('Flash not available on this device', 'warning');
+                state.isFlashOn = false;
+            }
+        }
+        
+        // Stop sender stream
+        function stopSenderStream() {
+            if (state.localStream) {
+                state.localStream.getTracks().forEach(track => track.stop());
+                state.localStream = null;
+                state.isStreaming = false;
             }
             
-            // Tambahkan animasi fade out untuk CSS
-            if (!document.querySelector('#flashAnimation')) {
-                const style = document.createElement('style');
-                style.id = 'flashAnimation';
-                style.textContent = `
-                    @keyframes fadeOut {
-                        0% { opacity: 0.7; }
-                        100% { opacity: 0; }
-                    }
-                `;
-                document.head.appendChild(style);
+            senderCameraScreen.style.display = 'none';
+            connectionScreen.style.display = 'flex';
+            
+            showNotification('Stream stopped', 'info');
+        }
+        
+        // Restart sender stream
+        async function restartSenderStream() {
+            if (state.isStreaming) {
+                await stopSenderStream();
+                setTimeout(startSenderStream, 500);
             }
         }
         
-        function updateServerInfo() {
-            if (state.isCameraActive) {
-                const settings = video.srcObject.getVideoTracks()[0].getSettings();
-                serverInfo.textContent = `${settings.width || '?'}x${settings.height || '?'} @ ${settings.frameRate || '?'}fps`;
+        // Connect to sender stream
+        function connectToSenderStream() {
+            const inputId = connectionIdInput.value.trim().toUpperCase();
+            
+            if (!inputId) {
+                showNotification('Please enter a Connection ID', 'warning');
+                return;
+            }
+            
+            if (inputId.length !== 6) {
+                showNotification('Connection ID must be 6 characters', 'warning');
+                return;
+            }
+            
+            // Use the entered connection ID
+            state.connectionId = inputId;
+            updateConnectionInfo();
+            generateAllQRCodes();
+            
+            // Proceed to receiver view
+            startReceiverView();
+        }
+        
+        // Start receiver view
+        function startReceiverView() {
+            connectionScreen.style.display = 'none';
+            receiverViewScreen.style.display = 'block';
+            
+            // Show connection panel
+            receiverConnectionPanel.style.display = 'block';
+            streamInfoPanel.style.display = 'none';
+            
+            // Update status
+            receiverStatusDot.className = 'status-dot disconnected';
+            receiverStatusText.textContent = 'Disconnected';
+            receiverStreamInfo.textContent = `Connection ID: ${state.connectionId}`;
+            
+            showNotification('Ready to connect to phone camera. Enter Connection ID on phone.', 'info');
+        }
+        
+        // Connect receiver
+        function connectReceiver() {
+            const inputId = receiverConnectionIdInput.value.trim().toUpperCase();
+            
+            if (!inputId) {
+                showNotification('Please enter a Connection ID', 'warning');
+                return;
+            }
+            
+            if (inputId.length !== 6) {
+                showNotification('Connection ID must be 6 characters', 'warning');
+                return;
+            }
+            
+            // Update connection ID
+            state.connectionId = inputId;
+            updateConnectionInfo();
+            
+            // Hide connection panel and show stream info
+            receiverConnectionPanel.style.display = 'none';
+            streamInfoPanel.style.display = 'block';
+            
+            // Update status
+            receiverStatusDot.className = 'status-dot wifi';
+            receiverStatusText.textContent = 'Connected';
+            receiverStreamInfo.textContent = 'Streaming from phone...';
+            
+            // Update stream info
+            connectedToDevice.textContent = `Phone (${state.connectionId})`;
+            streamStatus.textContent = 'Live';
+            streamResolution.textContent = '1280x720 @ 30fps';
+            
+            // Start simulated stream (for demo)
+            startSimulatedStream();
+            
+            showNotification(`✅ Connected to phone camera (ID: ${state.connectionId})`, 'success');
+        }
+        
+        // Start simulated stream (for demo)
+        function startSimulatedStream() {
+            // Create a canvas for demo stream
+            const canvas = document.createElement('canvas');
+            canvas.width = 1280;
+            canvas.height = 720;
+            const ctx = canvas.getContext('2d');
+            
+            // Create video stream from canvas
+            const stream = canvas.captureStream(30);
+            
+            // Animate demo stream
+            function drawDemoFrame() {
+                // Clear canvas with gradient
+                const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+                gradient.addColorStop(0, '#1a1a2e');
+                gradient.addColorStop(1, '#16213e');
+                ctx.fillStyle = gradient;
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                
+                // Draw demo content
+                const time = Date.now() / 1000;
+                
+                // Draw title
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 40px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('PHONE CAMERA STREAM', canvas.width / 2, 100);
+                
+                ctx.font = '24px Arial';
+                ctx.fillText('Demo Mode', canvas.width / 2, 150);
+                ctx.fillText(`Connection ID: ${state.connectionId}`, canvas.width / 2, 200);
+                
+                // Draw rotating circles
+                for (let i = 0; i < 5; i++) {
+                    const x = canvas.width / 2 + Math.sin(time + i) * 200;
+                    const y = canvas.height / 2 + Math.cos(time + i) * 150;
+                    const radius = 40 + Math.sin(time * 2 + i) * 20;
+                    
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+                    ctx.fillStyle = `hsl(${(time * 50 + i * 72) % 360}, 70%, 60%)`;
+                    ctx.fill();
+                }
+                
+                // Draw info text
+                ctx.font = '20px Arial';
+                ctx.fillStyle = '#aaa';
+                ctx.fillText('In real usage, this would show your phone camera feed', canvas.width / 2, canvas.height - 100);
+                ctx.fillText('Resolution: 1280x720 @ 30fps', canvas.width / 2, canvas.height - 60);
+                
+                requestAnimationFrame(drawDemoFrame);
+            }
+            
+            drawDemoFrame();
+            
+            // Set video source
+            receiverVideo.srcObject = stream;
+            receiverVideo.play().catch(e => console.log('Play error:', e));
+        }
+        
+        // Switch role
+        function switchRole() {
+            // Stop current activity
+            if (state.role === 'sender' && senderCameraScreen.style.display === 'block') {
+                stopSenderStream();
+            } else if (state.role === 'receiver' && receiverViewScreen.style.display === 'block') {
+                receiverViewScreen.style.display = 'none';
+            }
+            
+            // Switch role
+            state.role = state.role === 'sender' ? 'receiver' : 'sender';
+            
+            // Generate new connection ID for new role
+            state.connectionId = generateConnectionId();
+            
+            // Switch tab
+            connectionTabs.forEach(tab => tab.classList.remove('active'));
+            if (state.role === 'sender') {
+                document.querySelector('.connection-tab[data-tab="sender"]').classList.add('active');
+                senderTab.classList.add('active');
+                receiverTab.classList.remove('active');
+                updateRoleText('Mobile Phone (Sender)');
+            } else {
+                document.querySelector('.connection-tab[data-tab="receiver"]').classList.add('active');
+                receiverTab.classList.add('active');
+                senderTab.classList.remove('active');
+                updateRoleText('Computer (Receiver)');
+            }
+            
+            // Update connection info and QR codes
+            updateConnectionInfo();
+            generateAllQRCodes();
+            
+            settingsPanel.classList.remove('active');
+            
+            showNotification(`Switched to ${state.role} role. New Connection ID: ${state.connectionId}`, 'success');
+        }
+        
+        // Restart current stream
+        function restartCurrentStream() {
+            if (state.role === 'sender' && state.isStreaming) {
+                restartSenderStream();
+            } else if (state.role === 'receiver' && receiverViewScreen.style.display === 'block') {
+                // Restart receiver view
+                receiverViewScreen.style.display = 'none';
+                setTimeout(() => {
+                    startReceiverView();
+                }, 500);
+            } else {
+                showNotification('No active stream to restart', 'warning');
+            }
+            
+            settingsPanel.classList.remove('active');
+        }
+        
+        // Disconnect current
+        function disconnectCurrent() {
+            if (state.role === 'sender' && state.isStreaming) {
+                stopSenderStream();
+            } else if (state.role === 'receiver' && receiverViewScreen.style.display === 'block') {
+                receiverViewScreen.style.display = 'none';
+                connectionScreen.style.display = 'flex';
+            }
+            
+            settingsPanel.classList.remove('active');
+            showNotification('Disconnected', 'info');
+        }
+        
+        // Copy to clipboard
+        async function copyToClipboard(text, successMessage) {
+            try {
+                await navigator.clipboard.writeText(text);
+                showNotification(successMessage, 'success');
+            } catch (err) {
+                showNotification('Failed to copy: ' + err, 'error');
             }
         }
         
+        // Show notification
         function showNotification(message, type = 'info') {
             notification.textContent = message;
             notification.style.display = 'block';
@@ -2070,34 +1890,55 @@ adb forward --remove tcp:${state.cameraSettings.usbPort}`;
             }, 3000);
         }
         
-        function updateServerUrl() {
-            if (state.connectionType === 'usb') {
-                // For USB, use localhost with selected port
-                state.serverUrl = `http://localhost:${state.cameraSettings.usbPort}`;
-                serverUrlDisplay.textContent = state.serverUrl;
-                connectionInfo.textContent = `Use http://localhost:${state.cameraSettings.usbPort} in OBS Browser Source`;
-            } else {
-                // For WiFi, get current host
-                const protocol = window.location.protocol;
-                const hostname = window.location.hostname;
-                const port = window.location.port || (protocol === 'https:' ? '443' : '80');
-                state.serverUrl = `${protocol}//${hostname}:${port}`;
-                serverUrlDisplay.textContent = state.serverUrl;
-                connectionInfo.textContent = 'Use this URL in OBS Browser Source';
+        // Check URL parameters for auto-connect
+        function checkUrlParameters() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const connectId = urlParams.get('connect');
+            const role = urlParams.get('role');
+            const viewId = urlParams.get('view');
+            
+            if (connectId) {
+                // Auto-set connection ID
+                state.connectionId = connectId.toUpperCase();
+                
+                // Auto-select role if specified
+                if (role === 'sender') {
+                    state.role = 'sender';
+                    connectionTabs.forEach(tab => tab.classList.remove('active'));
+                    document.querySelector('.connection-tab[data-tab="sender"]').classList.add('active');
+                    senderTab.classList.add('active');
+                    receiverTab.classList.remove('active');
+                    updateRoleText('Mobile Phone (Sender)');
+                } else if (role === 'receiver') {
+                    state.role = 'receiver';
+                    connectionTabs.forEach(tab => tab.classList.remove('active'));
+                    document.querySelector('.connection-tab[data-tab="receiver"]').classList.add('active');
+                    receiverTab.classList.add('active');
+                    senderTab.classList.remove('active');
+                    updateRoleText('Computer (Receiver)');
+                }
+                
+                updateConnectionInfo();
+                generateAllQRCodes();
+                
+                // If view parameter exists, auto-start receiver
+                if (viewId) {
+                    setTimeout(() => {
+                        startReceiverView();
+                    }, 1000);
+                }
+                
+                showNotification(`Auto-connected with ID: ${state.connectionId}`, 'info');
             }
         }
         
-        // Handle visibility change
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && state.isCameraActive) {
-                // Page is hidden
-            }
-        });
+        // Check URL parameters on load
+        setTimeout(checkUrlParameters, 1000);
         
         // Handle page unload
         window.addEventListener('beforeunload', () => {
-            if (state.currentStream) {
-                state.currentStream.getTracks().forEach(track => track.stop());
+            if (state.localStream) {
+                state.localStream.getTracks().forEach(track => track.stop());
             }
         });
     </script>
