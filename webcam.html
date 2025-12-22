@@ -1,0 +1,2105 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Android Webcam - USB Debugging</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        body {
+            background: #000;
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        /* Loading Screen */
+        #loadingScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #111;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+        
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            border-top-color: #4a90e2;
+            animation: spin 1s ease-in-out infinite;
+            margin-bottom: 30px;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .loading-text {
+            font-size: 24px;
+            font-weight: 500;
+            margin-bottom: 40px;
+            text-align: center;
+        }
+        
+        .loading-subtext {
+            color: #aaa;
+            text-align: center;
+            line-height: 1.5;
+            max-width: 300px;
+        }
+        
+        /* Connection Screen */
+        #connectionScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        .connection-icon {
+            font-size: 80px;
+            margin-bottom: 30px;
+        }
+        
+        .connection-title {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+        
+        .connection-subtitle {
+            color: #b8c1ec;
+            text-align: center;
+            line-height: 1.5;
+            max-width: 300px;
+            margin-bottom: 40px;
+        }
+        
+        .connection-tabs {
+            display: flex;
+            width: 100%;
+            max-width: 400px;
+            margin-bottom: 30px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        
+        .connection-tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        
+        .connection-tab.active {
+            background: #4a90e2;
+            color: white;
+        }
+        
+        .connection-content {
+            display: none;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .connection-content.active {
+            display: block;
+        }
+        
+        .connection-steps {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 20px;
+        }
+        
+        .step:last-child {
+            margin-bottom: 0;
+        }
+        
+        .step-number {
+            background: #4a90e2;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+        
+        .step-content {
+            flex: 1;
+        }
+        
+        .step-title {
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+        
+        .step-description {
+            color: #b8c1ec;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+        
+        .usb-command {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        
+        .connection-buttons {
+            display: flex;
+            gap: 15px;
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .btn {
+            padding: 18px 25px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: #4a90e2;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #3a80d2;
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        /* USB Debugging Guide Modal */
+        #usbGuideModal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            padding: 20px;
+            overflow-y: auto;
+        }
+        
+        #usbGuideModal.active {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 30px;
+            max-width: 800px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: #4a90e2;
+        }
+        
+        .close-modal {
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.3s ease;
+        }
+        
+        .close-modal:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .guide-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .guide-step {
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+            background: rgba(255, 255, 255, 0.05);
+            padding: 25px;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .guide-step:hover {
+            background: rgba(255, 255, 255, 0.08);
+            transform: translateY(-2px);
+        }
+        
+        .guide-step-number {
+            background: #4a90e2;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        
+        .guide-step-content {
+            flex: 1;
+        }
+        
+        .guide-step-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: white;
+        }
+        
+        .guide-step-description {
+            color: #b8c1ec;
+            line-height: 1.6;
+            margin-bottom: 15px;
+        }
+        
+        .guide-code {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: monospace;
+            font-size: 14px;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        
+        .guide-note {
+            background: rgba(255, 193, 7, 0.1);
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin-top: 15px;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .note-title {
+            font-weight: 600;
+            color: #ffc107;
+            margin-bottom: 5px;
+        }
+        
+        .modal-footer {
+            margin-top: 30px;
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+        
+        /* Main Camera Screen */
+        #cameraScreen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            display: none;
+            flex-direction: column;
+            z-index: 998;
+        }
+        
+        /* Video Container */
+        .video-container {
+            position: relative;
+            flex: 1;
+            overflow: hidden;
+            background: #000;
+        }
+        
+        #video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+        
+        /* Top Bar */
+        .top-bar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+            z-index: 10;
+        }
+        
+        .connection-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.6);
+            padding: 10px 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+        }
+        
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-dot.wifi { background: #4caf50; }
+        .status-dot.usb { background: #2196f3; }
+        .status-dot.disconnected { background: #ff4757; animation: none; }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .status-text {
+            font-weight: 500;
+        }
+        
+        .server-info {
+            color: #aaa;
+            font-size: 14px;
+        }
+        
+        .controls-right {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .icon-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.6);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+        }
+        
+        .icon-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+            transform: scale(1.1);
+        }
+        
+        .icon-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        /* Bottom Controls */
+        .bottom-controls {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 30px 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 30px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            z-index: 10;
+        }
+        
+        .camera-switch-btn {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .camera-switch-btn:hover {
+            background: rgba(255, 255, 255, 0.25);
+            transform: scale(1.1);
+        }
+        
+        .camera-switch-btn svg {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .main-controls {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+        
+        .record-btn {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #ff4757;
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .record-btn.recording {
+            background: #ff4757;
+            animation: pulse-ring 2s infinite;
+        }
+        
+        .record-btn.recording::before {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 3px;
+        }
+        
+        .record-btn.recording svg {
+            display: none;
+        }
+        
+        .record-btn svg {
+            width: 32px;
+            height: 32px;
+        }
+        
+        .record-btn:hover {
+            transform: scale(1.1);
+        }
+        
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0.7); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 71, 87, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 71, 87, 0); }
+        }
+        
+        .control-btn {
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            border: none;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.1);
+        }
+        
+        .control-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+        
+        /* Flash button styles */
+        .flash-active {
+            background: rgba(255, 235, 59, 0.3);
+            border-color: #ffeb3b;
+            color: #ffeb3b;
+        }
+        
+        .flash-active svg {
+            filter: drop-shadow(0 0 3px rgba(255, 235, 59, 0.7));
+        }
+        
+        /* Settings Panel */
+        #settingsPanel {
+            position: fixed;
+            top: 0;
+            right: -400px;
+            width: 350px;
+            height: 100%;
+            background: rgba(20, 20, 30, 0.95);
+            backdrop-filter: blur(20px);
+            padding: 30px 25px;
+            z-index: 1001;
+            transition: right 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        #settingsPanel.active {
+            right: 0;
+        }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .settings-title {
+            font-size: 24px;
+            font-weight: 600;
+        }
+        
+        .close-settings {
+            background: none;
+            border: none;
+            color: white;
+            cursor: pointer;
+            padding: 10px;
+        }
+        
+        .settings-section {
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 15px;
+            color: #4a90e2;
+        }
+        
+        .settings-item {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        
+        .settings-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .settings-select {
+            width: 100%;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 6px;
+            color: white;
+            font-size: 14px;
+        }
+        
+        .settings-select option {
+            background: #1a1a2e;
+            color: white;
+        }
+        
+        .info-text {
+            color: #aaa;
+            font-size: 12px;
+            margin-top: 5px;
+            line-height: 1.4;
+        }
+        
+        .url-display {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+            word-break: break-all;
+            font-size: 14px;
+            font-family: monospace;
+        }
+        
+        .copy-btn {
+            background: #4a90e2;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-size: 14px;
+            width: 100%;
+        }
+        
+        .copy-btn:hover {
+            background: #3a80d2;
+        }
+        
+        /* USB Debug Panel */
+        #usbDebugPanel {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            backdrop-filter: blur(10px);
+            display: none;
+            z-index: 20;
+        }
+        
+        .usb-debug-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #4a90e2;
+        }
+        
+        .usb-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .usb-status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ff4757;
+        }
+        
+        .usb-status-dot.connected {
+            background: #4caf50;
+            animation: pulse 2s infinite;
+        }
+        
+        .usb-command-box {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 10px;
+            border-radius: 6px;
+            font-family: monospace;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+        
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            z-index: 1002;
+            display: none;
+            backdrop-filter: blur(10px);
+            animation: slideIn 0.3s ease;
+        }
+        
+        @keyframes slideIn {
+            from { top: 50px; opacity: 0; }
+            to { top: 100px; opacity: 1; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .bottom-controls {
+                gap: 15px;
+            }
+            
+            .camera-switch-btn {
+                width: 56px;
+                height: 56px;
+            }
+            
+            .record-btn {
+                width: 70px;
+                height: 70px;
+            }
+            
+            .control-btn {
+                width: 50px;
+                height: 50px;
+            }
+            
+            #settingsPanel {
+                width: 100%;
+                right: -100%;
+            }
+            
+            .connection-tabs {
+                flex-direction: column;
+            }
+            
+            .modal-content {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            .guide-step {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .guide-step-number {
+                width: 35px;
+                height: 35px;
+                font-size: 18px;
+            }
+            
+            .guide-step-title {
+                font-size: 18px;
+            }
+        }
+        
+        @media (max-height: 600px) {
+            .bottom-controls {
+                padding: 15px 20px;
+            }
+            
+            .connection-steps {
+                max-height: 50vh;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loadingScreen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Android Webcam</div>
+        <div class="loading-subtext">Menyiapkan kamera untuk streaming...</div>
+    </div>
+    
+    <!-- Connection Screen -->
+    <div id="connectionScreen">
+        <div class="connection-icon">📱</div>
+        <div class="connection-title">Android Webcam</div>
+        <div class="connection-subtitle">Pilih metode koneksi untuk streaming</div>
+        
+        <div class="connection-tabs">
+            <div class="connection-tab active" data-tab="wifi">WiFi Connection</div>
+            <div class="connection-tab" data-tab="usb">USB Debugging</div>
+        </div>
+        
+        <!-- WiFi Tab -->
+        <div id="wifiTab" class="connection-content active">
+            <div class="connection-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Start Camera on Android</div>
+                        <div class="step-description">Klik "Start Camera" untuk memulai streaming dari HP</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Same WiFi Network</div>
+                        <div class="step-description">Pastikan HP dan komputer dalam jaringan WiFi yang sama</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Use URL in OBS/vMix</div>
+                        <div class="step-description">Salin URL yang muncul dan tempel di OBS sebagai Browser Source</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="connection-buttons">
+                <button id="startCameraWifi" class="btn btn-primary">
+                    Start Camera (WiFi)
+                </button>
+                <button id="settingsBtn" class="btn btn-secondary">
+                    Settings
+                </button>
+            </div>
+        </div>
+        
+        <!-- USB Debugging Tab -->
+        <div id="usbTab" class="connection-content">
+            <div class="connection-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <div class="step-title">Enable USB Debugging</div>
+                        <div class="step-description">
+                            Di HP Android:
+                            <ul style="margin-left: 15px; margin-top: 5px;">
+                                <li>Buka Pengaturan → Tentang Telepon</li>
+                                <li>Ketuk "Nomor Build" 7 kali</li>
+                                <li>Kembali → Opsi Pengembang</li>
+                                <li>Aktifkan "USB Debugging"</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Connect USB Cable</div>
+                        <div class="step-description">Hubungkan HP ke komputer via kabel USB</div>
+                        <div class="usb-command">Pilih mode "File Transfer" atau "PTP" saat muncul pilihan</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <div class="step-title">Setup ADB on Computer</div>
+                        <div class="step-description">
+                            Di komputer:
+                            <ol style="margin-left: 15px; margin-top: 5px;">
+                                <li>Download ADB tools dari Android Developer</li>
+                                <li>Ekstrak ke folder (misal: C:\adb)</li>
+                                <li>Buka Command Prompt di folder tersebut</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Run ADB Commands</div>
+                        <div class="step-description">Jalankan perintah berikut di Command Prompt:</div>
+                        <div class="usb-command">adb devices</div>
+                        <div class="step-description">(Jika muncul device ID, lanjutkan dengan:)</div>
+                        <div class="usb-command">adb forward tcp:8080 tcp:8080</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="connection-buttons">
+                <button id="startCameraUsb" class="btn btn-primary">
+                    Start Camera (USB)
+                </button>
+                <button id="showUsbGuide" class="btn btn-secondary">
+                    How to Use USB Debugging
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- USB Debugging Guide Modal -->
+    <div id="usbGuideModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title">📋 USB Debugging Setup Guide</div>
+                <button class="close-modal" id="closeUsbGuide">×</button>
+            </div>
+            
+            <div class="guide-steps">
+                <div class="guide-step">
+                    <div class="guide-step-number">1</div>
+                    <div class="guide-step-content">
+                        <div class="guide-step-title">Enable Developer Options on Android</div>
+                        <div class="guide-step-description">
+                            <strong>On your Android phone:</strong>
+                            <ol>
+                                <li>Go to <strong>Settings</strong> → <strong>About Phone</strong></li>
+                                <li>Tap on <strong>Build Number</strong> 7 times</li>
+                                <li>You'll see a message: "You are now a developer!"</li>
+                                <li>Go back to Settings → <strong>System</strong> → <strong>Developer Options</strong></li>
+                                <li>Enable <strong>USB Debugging</strong></li>
+                            </ol>
+                        </div>
+                        <div class="guide-note">
+                            <div class="note-title">Note:</div>
+                            <div>Build Number might be under "Software Information" on some devices</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="guide-step">
+                    <div class="guide-step-number">2</div>
+                    <div class="guide-step-content">
+                        <div class="guide-step-title">Connect Your Phone via USB</div>
+                        <div class="guide-step-description">
+                            <strong>Connect your Android phone to computer:</strong>
+                            <ol>
+                                <li>Use a USB cable to connect your phone to computer</li>
+                                <li>On your phone, when prompted, select <strong>File Transfer</strong> or <strong>PTP (Photo Transfer)</strong> mode</li>
+                                <li>If asked, allow USB debugging on the computer</li>
+                            </ol>
+                        </div>
+                        <div class="guide-note">
+                            <div class="note-title">Tip:</div>
+                            <div>Use the original USB cable that came with your phone for best results</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="guide-step">
+                    <div class="guide-step-number">3</div>
+                    <div class="guide-step-content">
+                        <div class="guide-step-title">Install ADB on Computer</div>
+                        <div class="guide-step-description">
+                            <strong>On your Windows/Mac/Linux computer:</strong>
+                            <ol>
+                                <li>Download ADB tools from Android Developer website</li>
+                                <li>Extract the files to a folder (example: C:\adb on Windows)</li>
+                                <li>Open Command Prompt/Terminal in that folder</li>
+                            </ol>
+                        </div>
+                        <div class="guide-code">
+                            # Download link: https://developer.android.com/tools/releases/platform-tools
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="guide-step">
+                    <div class="guide-step-number">4</div>
+                    <div class="guide-step-content">
+                        <div class="guide-step-title">Run ADB Commands</div>
+                        <div class="guide-step-description">
+                            <strong>In Command Prompt/Terminal:</strong>
+                            <ol>
+                                <li>Check if device is detected:</li>
+                            </ol>
+                        </div>
+                        <div class="guide-code">adb devices</div>
+                        <div class="guide-step-description">
+                            <ol start="2">
+                                <li>If you see your device ID, run port forwarding:</li>
+                            </ol>
+                        </div>
+                        <div class="guide-code">adb forward tcp:8080 tcp:8080</div>
+                        <div class="guide-note">
+                            <div class="note-title">Important:</div>
+                            <div>Keep the Command Prompt/Terminal window open while using USB debugging</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="guide-step">
+                    <div class="guide-step-number">5</div>
+                    <div class="guide-step-content">
+                        <div class="guide-step-title">Start Camera and Use in OBS</div>
+                        <div class="guide-step-description">
+                            <strong>Back in the webcam app:</strong>
+                            <ol>
+                                <li>Click "Start Camera (USB)" button</li>
+                                <li>Wait for connection to establish</li>
+                                <li>In OBS, add a <strong>Browser Source</strong></li>
+                                <li>Use URL: <strong>http://localhost:8080</strong></li>
+                            </ol>
+                        </div>
+                        <div class="guide-note">
+                            <div class="note-title">Benefits of USB Debugging:</div>
+                            <div>• Faster and more stable than WiFi<br>• Lower latency<br>• Works without WiFi network<br>• Better video quality</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button id="copyAllCommands" class="btn btn-secondary">Copy All Commands</button>
+                <button id="startFromGuide" class="btn btn-primary">Start Camera (USB)</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Camera Screen -->
+    <div id="cameraScreen">
+        <div class="video-container">
+            <video id="video" autoplay playsinline></video>
+            
+            <!-- Top Bar -->
+            <div class="top-bar">
+                <div class="connection-status">
+                    <div class="status-dot" id="statusDot"></div>
+                    <div class="status-text" id="statusText">CONNECTING</div>
+                    <div class="server-info" id="serverInfo">Initializing...</div>
+                </div>
+                
+                <div class="controls-right">
+                    <button class="icon-btn" id="toggleUsbPanel">
+                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M7 2a1 1 0 00-.707 1.707L7 4.414v3.758a1 1 0 01-.293.707l-4 4C.817 14.769 2.156 18 4.828 18h10.343c2.673 0 4.012-3.231 2.122-5.121l-4-4A1 1 0 0113 8.172V4.414l.707-.707A1 1 0 0013 2H7zm2 6.172V4h2v4.172a3 3 0 00.879 2.12l1.027 1.028a4 4 0 00-2.171.102l-.47.156a4 4 0 01-2.53 0l-.563-.187a1.993 1.993 0 00-.114-.035l1.063-1.063A3 3 0 009 8.172z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                    
+                    <button class="icon-btn" id="toggleSettings">
+                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Bottom Controls -->
+            <div class="bottom-controls">
+                <button class="camera-switch-btn" id="switchCamera">
+                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M4 5a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V7a2 2 0 00-2-2h-1.586a1 1 0 01-.707-.293l-1.121-1.121A2 2 0 0011.172 3H8.828a2 2 0 00-1.414.586L6.293 4.707A1 1 0 015.586 5H4zm6 9a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+                
+                <div class="main-controls">
+                    <button class="control-btn" id="zoomOutBtn">
+                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                            <path fill-rule="evenodd" d="M5 8a1 1 0 011-1h4a1 1 0 110 2H6a1 1 0 01-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                    
+                    <button class="record-btn" id="recordBtn">
+                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <circle cx="10" cy="10" r="5"/>
+                        </svg>
+                    </button>
+                    
+                    <button class="control-btn" id="zoomInBtn">
+                        <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"></path>
+                            <path fill-rule="evenodd" d="M8 4a1 1 0 011 1v3h3a1 1 0 110 2H9v3a1 1 0 11-2 0v-3H4a1 1 0 110-2h3V5a1 1 0 011-1z" clip-rule="evenodd"></path>
+                        </svg>
+                    </button>
+                </div>
+                
+                <button class="camera-switch-btn" id="flashToggle">
+                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clip-rule="evenodd"></path>
+                    </svg>
+                </button>
+            </div>
+            
+            <!-- USB Debug Panel -->
+            <div id="usbDebugPanel">
+                <div class="usb-debug-title">USB Debugging Status</div>
+                <div class="usb-status">
+                    <div class="usb-status-dot" id="usbStatusDot"></div>
+                    <span id="usbStatusText">Not Connected</span>
+                </div>
+                <div class="usb-command-box" id="usbCommandDisplay">
+                    adb forward tcp:8080 tcp:8080
+                </div>
+                <button class="copy-btn" id="copyUsbCommand">Copy Command</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Panel -->
+    <div id="settingsPanel">
+        <div class="settings-header">
+            <div class="settings-title">Settings</div>
+            <button class="close-settings" id="closeSettings">
+                <svg fill="currentColor" width="24" height="24" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <div class="settings-section">
+            <div class="section-title">Camera Settings</div>
+            
+            <div class="settings-item">
+                <label class="settings-label">Select Camera</label>
+                <select class="settings-select" id="cameraSelect">
+                    <option value="">Loading cameras...</option>
+                </select>
+            </div>
+            
+            <div class="settings-item">
+                <label class="settings-label">Resolution</label>
+                <select class="settings-select" id="resolutionSelect">
+                    <option value="hd">HD (1280x720)</option>
+                    <option value="fullhd" selected>Full HD (1920x1080)</option>
+                    <option value="max">Maximum Available</option>
+                </select>
+                <div class="info-text">USB: Recommended Full HD or Max</div>
+            </div>
+            
+            <div class="settings-item">
+                <label class="settings-label">Frame Rate</label>
+                <select class="settings-select" id="frameRateSelect">
+                    <option value="24">24 fps</option>
+                    <option value="30" selected>30 fps</option>
+                    <option value="60">60 fps</option>
+                </select>
+                <div class="info-text">USB supports higher frame rates</div>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="section-title">Connection</div>
+            
+            <div class="settings-item">
+                <div class="settings-label">Connection Type</div>
+                <div id="currentConnectionType" style="padding: 10px; background: rgba(255,255,255,0.1); border-radius: 6px; margin-top: 5px;">
+                    WiFi Connection
+                </div>
+            </div>
+            
+            <div class="settings-item">
+                <div class="settings-label">Server URL for OBS/vMix</div>
+                <div class="url-display" id="serverUrl">http://192.168.1.100:8080</div>
+                <div class="info-text" id="connectionInfo">Use this URL in OBS Browser Source</div>
+                <button class="copy-btn" id="copyUrlBtn">Copy URL</button>
+            </div>
+            
+            <div class="settings-item">
+                <div class="settings-label">USB Port (ADB Forward)</div>
+                <select class="settings-select" id="usbPortSelect">
+                    <option value="8080" selected>Port 8080 (Default)</option>
+                    <option value="8081">Port 8081</option>
+                    <option value="8082">Port 8082</option>
+                    <option value="8083">Port 8083</option>
+                </select>
+                <div class="info-text">Change if port 8080 is already in use</div>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <div class="section-title">Video Settings</div>
+            
+            <div class="settings-item">
+                <label class="settings-label">Zoom Level</label>
+                <input type="range" id="zoomSlider" class="settings-select" min="100" max="400" value="100">
+                <div class="info-text" id="zoomValueText">Current: 1.0x</div>
+            </div>
+            
+            <div class="settings-item">
+                <label class="settings-label">Mirror Mode</label>
+                <select class="settings-select" id="mirrorMode">
+                    <option value="auto">Auto (Front camera mirrored)</option>
+                    <option value="on">Always On</option>
+                    <option value="off">Always Off</option>
+                </select>
+            </div>
+            
+            <div class="settings-item">
+                <label class="settings-label">Video Quality</label>
+                <select class="settings-select" id="videoQuality">
+                    <option value="balanced" selected>Balanced</option>
+                    <option value="quality">Prioritize Quality</option>
+                    <option value="performance">Prioritize Performance</option>
+                </select>
+                <div class="info-text">USB: Use "Quality" for best results</div>
+            </div>
+        </div>
+        
+        <button id="restartCamera" class="btn btn-primary" style="width: 100%; margin-top: 20px;">
+            Restart Camera
+        </button>
+        
+        <button id="switchConnection" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
+            Switch to WiFi Connection
+        </button>
+        
+        <button id="showUsbGuideFromSettings" class="btn btn-secondary" style="width: 100%; margin-top: 10px;">
+            USB Debugging Guide
+        </button>
+    </div>
+    
+    <!-- Notification -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        // State Management
+        let state = {
+            isCameraActive: false,
+            currentStream: null,
+            currentDeviceId: null,
+            videoDevices: [],
+            zoomLevel: 1.0,
+            isRecording: false,
+            isFrontCamera: true,
+            isFlashOn: false,
+            connectionType: 'wifi', // 'wifi' or 'usb'
+            serverUrl: '',
+            cameraSettings: {
+                resolution: 'fullhd',
+                frameRate: 30,
+                mirrorMode: 'auto',
+                videoQuality: 'balanced',
+                usbPort: 8080
+            },
+            usbConnected: false
+        };
+        
+        // DOM Elements
+        const loadingScreen = document.getElementById('loadingScreen');
+        const connectionScreen = document.getElementById('connectionScreen');
+        const cameraScreen = document.getElementById('cameraScreen');
+        const settingsPanel = document.getElementById('settingsPanel');
+        const usbDebugPanel = document.getElementById('usbDebugPanel');
+        const usbGuideModal = document.getElementById('usbGuideModal');
+        const video = document.getElementById('video');
+        const statusDot = document.getElementById('statusDot');
+        const statusText = document.getElementById('statusText');
+        const serverInfo = document.getElementById('serverInfo');
+        const serverUrlDisplay = document.getElementById('serverUrl');
+        const connectionInfo = document.getElementById('connectionInfo');
+        const currentConnectionType = document.getElementById('currentConnectionType');
+        const notification = document.getElementById('notification');
+        
+        // Connection Tabs
+        const connectionTabs = document.querySelectorAll('.connection-tab');
+        const wifiTab = document.getElementById('wifiTab');
+        const usbTab = document.getElementById('usbTab');
+        
+        // Control Buttons
+        const startCameraWifi = document.getElementById('startCameraWifi');
+        const startCameraUsb = document.getElementById('startCameraUsb');
+        const showUsbGuide = document.getElementById('showUsbGuide');
+        const showUsbGuideFromSettings = document.getElementById('showUsbGuideFromSettings');
+        const closeUsbGuide = document.getElementById('closeUsbGuide');
+        const copyAllCommands = document.getElementById('copyAllCommands');
+        const startFromGuide = document.getElementById('startFromGuide');
+        const settingsBtn = document.getElementById('settingsBtn');
+        const toggleSettings = document.getElementById('toggleSettings');
+        const closeSettings = document.getElementById('closeSettings');
+        const switchCamera = document.getElementById('switchCamera');
+        const recordBtn = document.getElementById('recordBtn');
+        const flashToggle = document.getElementById('flashToggle');
+        const restartCameraBtn = document.getElementById('restartCamera');
+        const switchConnection = document.getElementById('switchConnection');
+        const toggleUsbPanel = document.getElementById('toggleUsbPanel');
+        
+        // Zoom Controls
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomSlider = document.getElementById('zoomSlider');
+        const zoomValueText = document.getElementById('zoomValueText');
+        
+        // USB Controls
+        const usbStatusDot = document.getElementById('usbStatusDot');
+        const usbStatusText = document.getElementById('usbStatusText');
+        const usbCommandDisplay = document.getElementById('usbCommandDisplay');
+        const copyUsbCommand = document.getElementById('copyUsbCommand');
+        const usbPortSelect = document.getElementById('usbPortSelect');
+        
+        // Settings Controls
+        const cameraSelect = document.getElementById('cameraSelect');
+        const resolutionSelect = document.getElementById('resolutionSelect');
+        const frameRateSelect = document.getElementById('frameRateSelect');
+        const mirrorMode = document.getElementById('mirrorMode');
+        const videoQuality = document.getElementById('videoQuality');
+        const copyUrlBtn = document.getElementById('copyUrlBtn');
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Hide loading screen after 2 seconds
+            setTimeout(() => {
+                loadingScreen.style.display = 'none';
+                connectionScreen.style.display = 'flex';
+            }, 2000);
+            
+            // Initialize camera devices
+            await initializeCameraDevices();
+            
+            // Setup event listeners
+            setupEventListeners();
+            
+            // Update server URL
+            updateServerUrl();
+        });
+        
+        // Setup event listeners
+        function setupEventListeners() {
+            // Connection tabs
+            connectionTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const tabId = tab.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    connectionTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show corresponding content
+                    wifiTab.classList.remove('active');
+                    usbTab.classList.remove('active');
+                    
+                    if (tabId === 'wifi') {
+                        wifiTab.classList.add('active');
+                        state.connectionType = 'wifi';
+                    } else {
+                        usbTab.classList.add('active');
+                        state.connectionType = 'usb';
+                    }
+                    
+                    updateServerUrl();
+                });
+            });
+            
+            // Start camera buttons
+            startCameraWifi.addEventListener('click', () => {
+                state.connectionType = 'wifi';
+                startCamera();
+            });
+            
+            startCameraUsb.addEventListener('click', () => {
+                state.connectionType = 'usb';
+                startCamera();
+            });
+            
+            // USB Guide buttons
+            showUsbGuide.addEventListener('click', () => {
+                usbGuideModal.classList.add('active');
+            });
+            
+            showUsbGuideFromSettings.addEventListener('click', () => {
+                settingsPanel.classList.remove('active');
+                usbGuideModal.classList.add('active');
+            });
+            
+            closeUsbGuide.addEventListener('click', () => {
+                usbGuideModal.classList.remove('active');
+            });
+            
+            copyAllCommands.addEventListener('click', copyAllUsbCommands);
+            startFromGuide.addEventListener('click', () => {
+                state.connectionType = 'usb';
+                usbGuideModal.classList.remove('active');
+                startCamera();
+            });
+            
+            // Settings buttons
+            settingsBtn.addEventListener('click', () => {
+                settingsPanel.classList.add('active');
+                updateSettingsPanel();
+            });
+            
+            toggleSettings.addEventListener('click', () => {
+                settingsPanel.classList.add('active');
+                updateSettingsPanel();
+            });
+            
+            closeSettings.addEventListener('click', () => settingsPanel.classList.remove('active'));
+            
+            // Camera controls
+            switchCamera.addEventListener('click', switchCameraDevice);
+            recordBtn.addEventListener('click', toggleRecording);
+            flashToggle.addEventListener('click', toggleFlash);
+            restartCameraBtn.addEventListener('click', restartCamera);
+            switchConnection.addEventListener('click', switchToConnectionScreen);
+            toggleUsbPanel.addEventListener('click', () => {
+                usbDebugPanel.style.display = usbDebugPanel.style.display === 'block' ? 'none' : 'block';
+            });
+            
+            // Zoom controls
+            zoomInBtn.addEventListener('click', () => adjustZoom(0.1));
+            zoomOutBtn.addEventListener('click', () => adjustZoom(-0.1));
+            zoomSlider.addEventListener('input', handleZoomSlider);
+            
+            // USB controls
+            copyUsbCommand.addEventListener('click', copyUsbCommandToClipboard);
+            usbPortSelect.addEventListener('change', (e) => {
+                state.cameraSettings.usbPort = parseInt(e.target.value);
+                updateServerUrl();
+                updateUsbCommand();
+            });
+            
+            // Settings changes
+            cameraSelect.addEventListener('change', (e) => {
+                state.currentDeviceId = e.target.value;
+                if (state.isCameraActive) {
+                    restartCamera();
+                }
+            });
+            
+            resolutionSelect.addEventListener('change', (e) => {
+                state.cameraSettings.resolution = e.target.value;
+                if (state.isCameraActive) {
+                    restartCamera();
+                }
+            });
+            
+            frameRateSelect.addEventListener('change', (e) => {
+                state.cameraSettings.frameRate = parseInt(e.target.value);
+                if (state.isCameraActive) {
+                    restartCamera();
+                }
+            });
+            
+            mirrorMode.addEventListener('change', (e) => {
+                state.cameraSettings.mirrorMode = e.target.value;
+                updateVideoTransform();
+            });
+            
+            videoQuality.addEventListener('change', (e) => {
+                state.cameraSettings.videoQuality = e.target.value;
+                if (state.isCameraActive) {
+                    restartCamera();
+                }
+            });
+            
+            copyUrlBtn.addEventListener('click', copyUrlToClipboard);
+            
+            // Close modal when clicking outside
+            usbGuideModal.addEventListener('click', (e) => {
+                if (e.target === usbGuideModal) {
+                    usbGuideModal.classList.remove('active');
+                }
+            });
+        }
+        
+        // Copy all USB commands to clipboard
+        async function copyAllUsbCommands() {
+            const commands = `# Android USB Debugging Commands
+
+# Step 1: Check if device is detected
+adb devices
+
+# Step 2: Forward port (use your chosen port)
+adb forward tcp:${state.cameraSettings.usbPort} tcp:${state.cameraSettings.usbPort}
+
+# Step 3: Start camera in web app and use this URL in OBS:
+http://localhost:${state.cameraSettings.usbPort}
+
+# Step 4: To stop port forwarding
+adb forward --remove tcp:${state.cameraSettings.usbPort}`;
+            
+            try {
+                await navigator.clipboard.writeText(commands);
+                showNotification('All USB commands copied to clipboard!', 'success');
+            } catch (err) {
+                showNotification('Failed to copy commands: ' + err, 'error');
+            }
+        }
+        
+        // Update settings panel
+        function updateSettingsPanel() {
+            // Update connection type display
+            currentConnectionType.textContent = state.connectionType === 'wifi' ? 'WiFi Connection' : 'USB Debugging';
+            currentConnectionType.style.background = state.connectionType === 'wifi' 
+                ? 'rgba(76, 175, 80, 0.2)' 
+                : 'rgba(33, 150, 243, 0.2)';
+            
+            // Update switch button text
+            switchConnection.textContent = state.connectionType === 'wifi' 
+                ? 'Switch to USB Debugging' 
+                : 'Switch to WiFi Connection';
+            
+            // Update connection info
+            if (state.connectionType === 'usb') {
+                connectionInfo.textContent = 'Use http://localhost:' + state.cameraSettings.usbPort + ' in OBS Browser Source';
+            }
+        }
+        
+        // Start camera function
+        async function startCamera() {
+            try {
+                loadingScreen.style.display = 'flex';
+                connectionScreen.style.display = 'none';
+                
+                // Stop existing stream if any
+                if (state.currentStream) {
+                    state.currentStream.getTracks().forEach(track => track.stop());
+                    state.isFlashOn = false; // Reset flash state
+                    flashToggle.classList.remove('flash-active');
+                }
+                
+                // Get constraints based on settings
+                const constraints = getCameraConstraints();
+                
+                // Get media stream
+                const stream = await navigator.mediaDevices.getUserMedia(constraints);
+                state.currentStream = stream;
+                state.isCameraActive = true;
+                
+                // Set video source
+                video.srcObject = stream;
+                
+                // Wait for video to load
+                await new Promise((resolve) => {
+                    video.onloadedmetadata = () => {
+                        video.play();
+                        resolve();
+                    };
+                });
+                
+                // Update UI
+                updateConnectionStatus();
+                updateVideoTransform();
+                updateServerInfo();
+                
+                // Update USB status
+                if (state.connectionType === 'usb') {
+                    updateUsbStatus();
+                    usbDebugPanel.style.display = 'block';
+                    // Start checking USB connection
+                    checkUsbConnection();
+                    setInterval(checkUsbConnection, 5000);
+                }
+                
+                // Show camera screen
+                loadingScreen.style.display = 'none';
+                cameraScreen.style.display = 'flex';
+                
+                showNotification('Camera started successfully! (' + state.connectionType.toUpperCase() + ')', 'success');
+                
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                loadingScreen.style.display = 'none';
+                connectionScreen.style.display = 'flex';
+                
+                let errorMessage = 'Failed to start camera: ';
+                if (error.name === 'NotAllowedError') {
+                    errorMessage += 'Camera permission denied';
+                } else if (error.name === 'NotFoundError') {
+                    errorMessage += 'No camera found';
+                } else if (error.name === 'NotReadableError') {
+                    errorMessage += 'Camera is already in use';
+                } else {
+                    errorMessage += error.message;
+                }
+                
+                showNotification(errorMessage, 'error');
+            }
+        }
+        
+        // Get camera constraints based on settings
+        function getCameraConstraints() {
+            const constraints = {
+                video: {
+                    deviceId: state.currentDeviceId ? { exact: state.currentDeviceId } : undefined
+                },
+                audio: false
+            };
+            
+            // Add resolution constraints
+            switch (state.cameraSettings.resolution) {
+                case 'hd':
+                    constraints.video.width = { ideal: 1280 };
+                    constraints.video.height = { ideal: 720 };
+                    break;
+                case 'fullhd':
+                    constraints.video.width = { ideal: 1920 };
+                    constraints.video.height = { ideal: 1080 };
+                    break;
+                case 'max':
+                    // For USB, try to get maximum resolution
+                    if (state.connectionType === 'usb') {
+                        constraints.video.width = { ideal: 3840 };
+                        constraints.video.height = { ideal: 2160 };
+                    } else {
+                        constraints.video.width = { ideal: 1920 };
+                        constraints.video.height = { ideal: 1080 };
+                    }
+                    break;
+            }
+            
+            // Add frame rate constraint (USB can handle higher FPS)
+            const targetFps = state.connectionType === 'usb' 
+                ? Math.min(state.cameraSettings.frameRate, 60)
+                : Math.min(state.cameraSettings.frameRate, 30);
+            
+            constraints.video.frameRate = { ideal: targetFps };
+            
+            // Add quality settings for USB
+            if (state.connectionType === 'usb') {
+                switch (state.cameraSettings.videoQuality) {
+                    case 'quality':
+                        constraints.video.width = { ideal: 3840 };
+                        constraints.video.height = { ideal: 2160 };
+                        break;
+                    case 'performance':
+                        constraints.video.width = { ideal: 1280 };
+                        constraints.video.height = { ideal: 720 };
+                        constraints.video.frameRate = { ideal: 60 };
+                        break;
+                }
+            }
+            
+            return constraints;
+        }
+        
+        // Update connection status display
+        function updateConnectionStatus() {
+            if (state.connectionType === 'wifi') {
+                statusDot.className = 'status-dot wifi';
+                statusText.textContent = 'WiFi LIVE';
+                statusDot.style.animation = 'pulse 2s infinite';
+            } else {
+                statusDot.className = 'status-dot usb';
+                statusText.textContent = 'USB LIVE';
+                statusDot.style.animation = 'pulse 1s infinite';
+            }
+        }
+        
+        // Update USB status display
+        function updateUsbStatus() {
+            if (state.usbConnected) {
+                usbStatusDot.className = 'usb-status-dot connected';
+                usbStatusText.textContent = 'USB Connected';
+                usbCommandDisplay.textContent = `Forwarding: localhost:${state.cameraSettings.usbPort}`;
+            } else {
+                usbStatusDot.className = 'usb-status-dot';
+                usbStatusText.textContent = 'USB Not Connected';
+                usbCommandDisplay.textContent = `Run: adb forward tcp:${state.cameraSettings.usbPort} tcp:${state.cameraSettings.usbPort}`;
+            }
+        }
+        
+        // Update USB command display
+        function updateUsbCommand() {
+            usbCommandDisplay.textContent = `adb forward tcp:${state.cameraSettings.usbPort} tcp:${state.cameraSettings.usbPort}`;
+        }
+        
+        // Check USB connection periodically
+        async function checkUsbConnection() {
+            if (state.connectionType !== 'usb' || !state.isCameraActive) return;
+            
+            try {
+                const port = state.cameraSettings.usbPort;
+                const testUrl = `http://localhost:${port}`;
+                
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 1000);
+                
+                await fetch(testUrl, { 
+                    method: 'HEAD',
+                    mode: 'no-cors',
+                    signal: controller.signal
+                });
+                
+                clearTimeout(timeoutId);
+                
+                if (!state.usbConnected) {
+                    state.usbConnected = true;
+                    updateUsbStatus();
+                    showNotification('USB connection established!', 'success');
+                }
+                
+            } catch (error) {
+                if (state.usbConnected) {
+                    state.usbConnected = false;
+                    updateUsbStatus();
+                    showNotification('USB connection lost. Check ADB connection.', 'warning');
+                }
+            }
+        }
+        
+        // Copy USB command to clipboard
+        async function copyUsbCommandToClipboard() {
+            const command = `adb forward tcp:${state.cameraSettings.usbPort} tcp:${state.cameraSettings.usbPort}`;
+            try {
+                await navigator.clipboard.writeText(command);
+                showNotification('ADB command copied to clipboard!', 'success');
+            } catch (err) {
+                showNotification('Failed to copy command: ' + err, 'error');
+            }
+        }
+        
+        // Copy URL to clipboard
+        async function copyUrlToClipboard() {
+            try {
+                await navigator.clipboard.writeText(state.serverUrl);
+                showNotification('URL copied to clipboard!', 'success');
+            } catch (err) {
+                showNotification('Failed to copy URL: ' + err, 'error');
+            }
+        }
+        
+        // Switch to connection screen
+        function switchToConnectionScreen() {
+            if (state.isCameraActive) {
+                state.currentStream.getTracks().forEach(track => track.stop());
+                state.isCameraActive = false;
+                state.isFlashOn = false; // Reset flash state
+                state.isRecording = false; // Reset recording state
+                recordBtn.classList.remove('recording');
+                flashToggle.classList.remove('flash-active');
+            }
+            
+            cameraScreen.style.display = 'none';
+            connectionScreen.style.display = 'flex';
+            settingsPanel.classList.remove('active');
+            
+            // Switch connection type
+            state.connectionType = state.connectionType === 'wifi' ? 'usb' : 'wifi';
+            
+            // Update active tab
+            connectionTabs.forEach(tab => tab.classList.remove('active'));
+            if (state.connectionType === 'wifi') {
+                document.querySelector('.connection-tab[data-tab="wifi"]').classList.add('active');
+                wifiTab.classList.add('active');
+                usbTab.classList.remove('active');
+            } else {
+                document.querySelector('.connection-tab[data-tab="usb"]').classList.add('active');
+                usbTab.classList.add('active');
+                wifiTab.classList.remove('active');
+            }
+            
+            updateServerUrl();
+        }
+        
+        async function initializeCameraDevices() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream.getTracks().forEach(track => track.stop());
+                
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                state.videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                cameraSelect.innerHTML = '';
+                state.videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    
+                    const label = device.label.toLowerCase();
+                    let cameraName = `Camera ${index + 1}`;
+                    
+                    if (label.includes('front') || label.includes('depan')) {
+                        cameraName = `📱 Front Camera`;
+                        state.isFrontCamera = true;
+                    } else if (label.includes('back') || label.includes('rear') || label.includes('belakang')) {
+                        cameraName = `📷 Back Camera`;
+                        state.isFrontCamera = false;
+                    }
+                    
+                    option.textContent = cameraName;
+                    cameraSelect.appendChild(option);
+                });
+                
+                if (state.videoDevices.length > 0) {
+                    state.currentDeviceId = state.videoDevices[0].deviceId;
+                    cameraSelect.value = state.currentDeviceId;
+                }
+                
+            } catch (error) {
+                console.error('Error initializing cameras:', error);
+                showNotification('Error accessing camera: ' + error.message, 'error');
+            }
+        }
+        
+        async function switchCameraDevice() {
+            if (state.videoDevices.length < 2) {
+                showNotification('Only one camera available', 'warning');
+                return;
+            }
+            
+            const currentIndex = state.videoDevices.findIndex(
+                device => device.deviceId === state.currentDeviceId
+            );
+            
+            const nextIndex = (currentIndex + 1) % state.videoDevices.length;
+            state.currentDeviceId = state.videoDevices[nextIndex].deviceId;
+            cameraSelect.value = state.currentDeviceId;
+            
+            const deviceLabel = state.videoDevices[nextIndex].label.toLowerCase();
+            state.isFrontCamera = deviceLabel.includes('front') || deviceLabel.includes('depan');
+            
+            // Reset flash when switching cameras
+            state.isFlashOn = false;
+            flashToggle.classList.remove('flash-active');
+            
+            await restartCamera();
+            showNotification(`Switched to ${state.isFrontCamera ? 'front' : 'back'} camera`, 'success');
+        }
+        
+        async function restartCamera() {
+            if (state.isCameraActive) {
+                await startCamera();
+            }
+        }
+        
+        // Adjust zoom with minimum 1.0x
+        function adjustZoom(delta) {
+            state.zoomLevel = Math.max(1.0, Math.min(4.0, state.zoomLevel + delta));
+            updateZoomDisplay();
+            updateVideoTransform();
+        }
+        
+        function handleZoomSlider() {
+            state.zoomLevel = Math.max(1.0, zoomSlider.value / 100);
+            updateZoomDisplay();
+            updateVideoTransform();
+        }
+        
+        function updateZoomDisplay() {
+            zoomValueText.textContent = `Current: ${state.zoomLevel.toFixed(1)}x`;
+            zoomSlider.value = state.zoomLevel * 100;
+        }
+        
+        function updateVideoTransform() {
+            let transform = '';
+            let shouldMirror = false;
+            
+            switch (state.cameraSettings.mirrorMode) {
+                case 'auto':
+                    shouldMirror = state.isFrontCamera;
+                    break;
+                case 'on':
+                    shouldMirror = true;
+                    break;
+                case 'off':
+                    shouldMirror = false;
+                    break;
+            }
+            
+            if (shouldMirror) {
+                transform += 'scaleX(-1) ';
+            }
+            
+            if (state.zoomLevel !== 1.0) {
+                transform += `scale(${state.zoomLevel})`;
+            }
+            
+            video.style.transform = transform || 'none';
+        }
+        
+        // Toggle recording with pause icon
+        function toggleRecording() {
+            state.isRecording = !state.isRecording;
+            
+            if (state.isRecording) {
+                // Start recording - change to pause icon
+                recordBtn.classList.add('recording');
+                showNotification('Recording started', 'success');
+            } else {
+                // Stop recording - change back to record icon
+                recordBtn.classList.remove('recording');
+                showNotification('Recording stopped', 'info');
+            }
+        }
+        
+        // Flash function - menggunakan teknik simulasi flash
+        async function toggleFlash() {
+            if (!state.isCameraActive) {
+                showNotification('Please start camera first', 'warning');
+                return;
+            }
+            
+            state.isFlashOn = !state.isFlashOn;
+            
+            if (state.isFlashOn) {
+                // Menyalakan flash (simulasi)
+                flashToggle.classList.add('flash-active');
+                
+                // Coba gunakan API torch jika tersedia
+                try {
+                    const videoTrack = state.currentStream.getVideoTracks()[0];
+                    if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
+                        // Coba gunakan torch mode jika didukung
+                        await videoTrack.applyConstraints({
+                            advanced: [{ torch: true }]
+                        });
+                    }
+                } catch (error) {
+                    console.log('Torch not supported, using visual feedback only');
+                }
+                
+                // Tambahkan efek visual untuk flash
+                const flashOverlay = document.createElement('div');
+                flashOverlay.id = 'flashOverlay';
+                flashOverlay.style.position = 'fixed';
+                flashOverlay.style.top = '0';
+                flashOverlay.style.left = '0';
+                flashOverlay.style.width = '100%';
+                flashOverlay.style.height = '100%';
+                flashOverlay.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+                flashOverlay.style.zIndex = '15';
+                flashOverlay.style.pointerEvents = 'none';
+                flashOverlay.style.animation = 'fadeOut 0.3s forwards';
+                
+                document.querySelector('.video-container').appendChild(flashOverlay);
+                
+                // Hapus overlay setelah animasi selesai
+                setTimeout(() => {
+                    if (flashOverlay.parentNode) {
+                        flashOverlay.parentNode.removeChild(flashOverlay);
+                    }
+                }, 300);
+                
+                showNotification('Flash ON', 'success');
+            } else {
+                // Mematikan flash
+                flashToggle.classList.remove('flash-active');
+                
+                // Coba matikan torch jika digunakan
+                try {
+                    const videoTrack = state.currentStream.getVideoTracks()[0];
+                    if (videoTrack && typeof videoTrack.applyConstraints === 'function') {
+                        await videoTrack.applyConstraints({
+                            advanced: [{ torch: false }]
+                        });
+                    }
+                } catch (error) {
+                    console.log('Torch control not available');
+                }
+                
+                showNotification('Flash OFF', 'info');
+            }
+            
+            // Tambahkan animasi fade out untuk CSS
+            if (!document.querySelector('#flashAnimation')) {
+                const style = document.createElement('style');
+                style.id = 'flashAnimation';
+                style.textContent = `
+                    @keyframes fadeOut {
+                        0% { opacity: 0.7; }
+                        100% { opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+        }
+        
+        function updateServerInfo() {
+            if (state.isCameraActive) {
+                const settings = video.srcObject.getVideoTracks()[0].getSettings();
+                serverInfo.textContent = `${settings.width || '?'}x${settings.height || '?'} @ ${settings.frameRate || '?'}fps`;
+            }
+        }
+        
+        function showNotification(message, type = 'info') {
+            notification.textContent = message;
+            notification.style.display = 'block';
+            
+            switch (type) {
+                case 'success':
+                    notification.style.background = 'rgba(46, 204, 113, 0.9)';
+                    break;
+                case 'error':
+                    notification.style.background = 'rgba(231, 76, 60, 0.9)';
+                    break;
+                case 'warning':
+                    notification.style.background = 'rgba(241, 196, 15, 0.9)';
+                    break;
+                default:
+                    notification.style.background = 'rgba(0, 0, 0, 0.8)';
+            }
+            
+            setTimeout(() => {
+                notification.style.display = 'none';
+            }, 3000);
+        }
+        
+        function updateServerUrl() {
+            if (state.connectionType === 'usb') {
+                // For USB, use localhost with selected port
+                state.serverUrl = `http://localhost:${state.cameraSettings.usbPort}`;
+                serverUrlDisplay.textContent = state.serverUrl;
+                connectionInfo.textContent = `Use http://localhost:${state.cameraSettings.usbPort} in OBS Browser Source`;
+            } else {
+                // For WiFi, get current host
+                const protocol = window.location.protocol;
+                const hostname = window.location.hostname;
+                const port = window.location.port || (protocol === 'https:' ? '443' : '80');
+                state.serverUrl = `${protocol}//${hostname}:${port}`;
+                serverUrlDisplay.textContent = state.serverUrl;
+                connectionInfo.textContent = 'Use this URL in OBS Browser Source';
+            }
+        }
+        
+        // Handle visibility change
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && state.isCameraActive) {
+                // Page is hidden
+            }
+        });
+        
+        // Handle page unload
+        window.addEventListener('beforeunload', () => {
+            if (state.currentStream) {
+                state.currentStream.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
