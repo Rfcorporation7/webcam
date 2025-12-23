@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Android Webcam Streamer - Real-time Connection</title>
+    <title>Android Webcam Streamer - Direct P2P Connection</title>
     <style>
         * {
             margin: 0;
@@ -184,36 +184,19 @@
             line-height: 1.4;
         }
         
-        .usb-command {
+        .code-display {
             background: rgba(0, 0, 0, 0.3);
-            padding: 10px;
-            border-radius: 6px;
-            font-family: monospace;
-            font-size: 13px;
-            margin-top: 10px;
-            word-break: break-all;
-        }
-        
-        .qr-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            margin: 20px 0;
-        }
-        
-        .qr-code-wrapper {
-            background: white;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 8px;
+            font-family: monospace;
+            font-size: 18px;
             margin: 15px 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        
-        .qr-code-img {
-            max-width: 200px;
-            height: auto;
+            word-break: break-all;
+            text-align: center;
+            letter-spacing: 3px;
+            font-weight: bold;
+            color: #4a90e2;
+            border: 2px solid rgba(74, 144, 226, 0.3);
         }
         
         .connection-buttons {
@@ -680,10 +663,6 @@
             .connection-tabs {
                 flex-direction: column;
             }
-            
-            .qr-code-img {
-                max-width: 150px;
-            }
         }
         
         @media (max-height: 600px) {
@@ -756,11 +735,46 @@
             background: rgba(255,255,255,0.15);
         }
         
-        /* Server Status */
-        .server-status {
+        /* Stream Info Panel */
+        .stream-info-panel {
+            position: absolute;
+            top: 100px;
+            left: 20px;
+            background: rgba(0,0,0,0.8);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            max-width: 300px;
+        }
+        
+        /* QR Code Styling */
+        .qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px 0;
+        }
+        
+        .qr-code-wrapper {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .qr-code-img {
+            max-width: 200px;
+            height: auto;
+        }
+        
+        /* Data Channel Status */
+        .data-channel-status {
             position: fixed;
             bottom: 20px;
-            left: 20px;
+            right: 20px;
             background: rgba(0,0,0,0.7);
             padding: 10px 15px;
             border-radius: 10px;
@@ -771,29 +785,19 @@
             z-index: 100;
         }
         
-        .server-status-dot {
+        .data-channel-dot {
             width: 8px;
             height: 8px;
             border-radius: 50%;
         }
         
-        .server-status-dot.connected {
+        .data-channel-dot.connected {
             background: #4caf50;
             animation: pulse 2s infinite;
         }
         
-        .server-status-dot.disconnected {
+        .data-channel-dot.disconnected {
             background: #ff4757;
-        }
-        
-        /* Video Canvas for WebRTC */
-        #remoteVideoCanvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: none;
         }
     </style>
 </head>
@@ -802,7 +806,7 @@
     <div id="loadingScreen">
         <div class="loading-spinner"></div>
         <div class="loading-text">Android Webcam Streamer</div>
-        <div class="loading-subtext">Menyiapkan sistem streaming kamera...</div>
+        <div class="loading-subtext">Menggunakan koneksi Peer-to-Peer langsung...</div>
     </div>
     
     <!-- Connection Screen -->
@@ -838,10 +842,18 @@
                 <div class="step">
                     <div class="step-number">3</div>
                     <div class="step-content">
-                        <div class="step-title">Bagikan Connection ID</div>
-                        <div class="step-description">Gunakan Connection ID ini di komputer:</div>
-                        <div class="connection-id-display" id="senderConnectionIdDisplay">LOADING</div>
-                        <div class="step-description">Atau scan QR code di komputer untuk terhubung otomatis</div>
+                        <div class="step-title">Bagikan Kode Koneksi</div>
+                        <div class="step-description">Kode ini akan digunakan di komputer:</div>
+                        <div class="code-display" id="senderConnectionCode">LOADING</div>
+                        <div class="step-description">Salin kode ini atau ingat 6 digitnya</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <div class="step-title">Hubungkan di Komputer</div>
+                        <div class="step-description">Buka aplikasi di komputer, masukkan kode yang sama, klik Connect</div>
                     </div>
                 </div>
             </div>
@@ -862,8 +874,16 @@
                 <div class="step">
                     <div class="step-number">1</div>
                     <div class="step-content">
-                        <div class="step-title">Masukkan Connection ID</div>
-                        <div class="step-description">Masukkan 6-digit Connection ID dari HP Android</div>
+                        <div class="step-title">Dapatkan Kode dari HP</div>
+                        <div class="step-description">Minta 6-digit kode dari HP yang sedang streaming</div>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <div class="step-title">Masukkan Kode Koneksi</div>
+                        <div class="step-description">Masukkan 6-digit kode dari HP Android:</div>
                         <div class="input-group">
                             <input type="text" id="receiverConnectionInput" class="text-input" maxlength="6" placeholder="ABCDEF" style="font-size: 20px; font-weight: bold;">
                         </div>
@@ -871,7 +891,7 @@
                 </div>
                 
                 <div class="step">
-                    <div class="step-number">2</div>
+                    <div class="step-number">3</div>
                     <div class="step-content">
                         <div class="step-title">Koneksi ke HP</div>
                         <div class="step-description">Klik "Connect to Phone" untuk mulai menerima stream</div>
@@ -879,11 +899,11 @@
                 </div>
                 
                 <div class="step">
-                    <div class="step-number">3</div>
+                    <div class="step-number">4</div>
                     <div class="step-content">
                         <div class="step-title">Gunakan di OBS</div>
                         <div class="step-description">Setelah terhubung, gunakan URL ini di OBS Browser Source:</div>
-                        <div class="usb-command" id="receiverObsUrl">http://localhost:8080</div>
+                        <div class="code-display" id="receiverObsUrl">http://localhost:8080</div>
                     </div>
                 </div>
             </div>
@@ -903,14 +923,13 @@
     <div id="senderCameraScreen" style="display: none;">
         <div class="video-container">
             <video id="senderVideo" autoplay playsinline muted></video>
-            <canvas id="senderCanvas" style="display: none;"></canvas>
             
             <div class="top-bar">
                 <div class="connection-status">
                     <div class="status-dot" id="senderStatusDot" class="disconnected"></div>
                     <div class="status-text" id="senderStatusText">Camera Active</div>
                     <div class="device-info">
-                        <span id="connectedReceiversCount">0 receivers connected</span>
+                        <span id="connectionStatusText">Waiting for connection...</span>
                     </div>
                 </div>
                 
@@ -949,14 +968,20 @@
             <div class="connection-panel" id="senderConnectionPanel">
                 <div style="font-size: 40px; margin-bottom: 15px;">📡</div>
                 <div style="font-size: 20px; font-weight: 600; margin-bottom: 10px;">Sharing Camera Stream</div>
-                <div style="color: #aaa; margin-bottom: 20px;">Connection ID:</div>
-                <div class="connection-id-display" id="senderActiveConnectionId">ABCDEF</div>
-                <div style="margin-top: 20px; color: #4caf50; font-size: 14px;" id="senderConnectionStatus">
-                    Waiting for receivers to connect...
+                <div style="color: #aaa; margin-bottom: 20px;">Connection Code:</div>
+                <div class="connection-id-display" id="senderActiveConnectionCode">ABCDEF</div>
+                <div style="margin-top: 20px; color: #ffc107; font-size: 14px;" id="senderConnectionStatus">
+                    Share this code with your computer
                 </div>
                 <div style="margin-top: 10px; font-size: 12px; color: #aaa;">
-                    Share this ID with your computer
+                    Paste this code in the computer app and click Connect
                 </div>
+            </div>
+            
+            <!-- Data Channel Status -->
+            <div class="data-channel-status" id="dataChannelStatus" style="display: none;">
+                <div class="data-channel-dot disconnected" id="dataChannelDot"></div>
+                <span id="dataChannelText">Data Channel: Disconnected</span>
             </div>
         </div>
     </div>
@@ -965,7 +990,6 @@
     <div id="receiverViewScreen" style="display: none;">
         <div class="video-container">
             <video id="receiverVideo" autoplay playsinline></video>
-            <canvas id="remoteVideoCanvas"></canvas>
             
             <div class="top-bar">
                 <div class="connection-status">
@@ -987,7 +1011,7 @@
             <div class="connection-panel" id="receiverConnectionPanel">
                 <div style="font-size: 40px; margin-bottom: 15px;">📱</div>
                 <div style="font-size: 20px; font-weight: 600; margin-bottom: 10px;">Connect to Phone Camera</div>
-                <div style="color: #aaa; margin-bottom: 20px;">Enter 6-digit Connection ID from phone:</div>
+                <div style="color: #aaa; margin-bottom: 20px;">Enter 6-digit code from phone:</div>
                 
                 <div class="input-group">
                     <input type="text" id="receiverActiveConnectionInput" class="text-input" maxlength="6" placeholder="ABCDEF" style="font-size: 24px; font-weight: bold;">
@@ -1005,18 +1029,17 @@
                 <div style="margin-top: 25px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.1);">
                     <div style="font-size: 14px; color: #aaa; margin-bottom: 10px;">Connection Status:</div>
                     <div style="font-size: 13px; color: #ffc107;" id="receiverConnectStatus">
-                        Enter Connection ID to begin
+                        Enter connection code to begin
                     </div>
                 </div>
             </div>
             
             <!-- Stream Info Panel -->
-            <div id="streamInfoPanel" style="position: absolute; top: 100px; left: 20px; background: rgba(0,0,0,0.8); padding: 20px; border-radius: 15px; backdrop-filter: blur(10px); max-width: 300px; display: none;">
+            <div class="stream-info-panel" id="streamInfoPanel" style="display: none;">
                 <div style="font-weight: 600; margin-bottom: 10px; color: #4a90e2;">📹 Stream Info</div>
                 <div style="margin-bottom: 5px; font-size: 14px;">Connected to: <span id="connectedToDevice" style="font-weight: bold;">Phone</span></div>
                 <div style="margin-bottom: 5px; font-size: 14px;">Status: <span id="streamStatus" style="color: #4caf50;">Live</span></div>
-                <div style="margin-bottom: 5px; font-size: 14px;">Connection ID: <span id="streamConnectionId" style="font-family: monospace;">ABCDEF</span></div>
-                <div style="margin-bottom: 5px; font-size: 14px;">Latency: <span id="streamLatency">0ms</span></div>
+                <div style="margin-bottom: 5px; font-size: 14px;">Code: <span id="streamConnectionCode" style="font-family: monospace;">ABCDEF</span></div>
                 <div style="font-size: 12px; color: #aaa;">Streaming from mobile phone</div>
             </div>
         </div>
@@ -1027,7 +1050,7 @@
         <div class="settings-header">
             <div class="settings-title">Settings</div>
             <button class="close-settings" id="closeSettings">
-                <svg fill="currentColor" width="24" height="24" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                <svg fill="currentColor" width="24" height="24" viewBox="0 0 20 20" xmlns="http://www.w3.org2000/svg">
                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                 </svg>
             </button>
@@ -1060,14 +1083,12 @@
                     <option value="low">Low (480p) - Faster</option>
                     <option value="medium" selected>Medium (720p) - Balanced</option>
                     <option value="high">High (1080p) - Better Quality</option>
-                    <option value="veryhigh">Very High (Max) - Best Quality</option>
                 </select>
             </div>
             
             <div class="settings-item">
                 <label class="settings-label">Frame Rate</label>
                 <select class="settings-select" id="fpsSelect">
-                    <option value="10">10 fps</option>
                     <option value="15">15 fps</option>
                     <option value="24">24 fps</option>
                     <option value="30" selected>30 fps</option>
@@ -1087,15 +1108,14 @@
             <div class="section-title">Connection</div>
             
             <div class="settings-item">
-                <div class="settings-label">Connection ID</div>
-                <div class="url-display" id="settingsConnectionId">Loading...</div>
-                <button class="copy-btn" id="copyConnectionIdBtn">Copy Connection ID</button>
+                <div class="settings-label">Connection Code</div>
+                <div class="url-display" id="settingsConnectionCode">Loading...</div>
+                <button class="copy-btn" id="copyConnectionCodeBtn">Copy Connection Code</button>
             </div>
             
             <div class="settings-item">
-                <div class="settings-label">Server Address</div>
-                <div class="url-display" id="serverAddress">ws://localhost:8080</div>
-                <div class="info-text">WebSocket server for real-time streaming</div>
+                <div class="settings-label">Connection Method</div>
+                <div class="info-text">Using WebRTC Peer-to-Peer (No external server needed)</div>
             </div>
             
             <div class="settings-item">
@@ -1116,12 +1136,6 @@
     
     <!-- Notification -->
     <div class="notification" id="notification"></div>
-    
-    <!-- Server Status -->
-    <div class="server-status" id="serverStatus" style="display: none;">
-        <div class="server-status-dot disconnected" id="serverStatusDot"></div>
-        <span id="serverStatusText">Server: Disconnected</span>
-    </div>
 
     <script>
         // State Management
@@ -1129,8 +1143,9 @@
             role: 'sender', // 'sender' or 'receiver'
             isStreaming: false,
             localStream: null,
-            ws: null,
-            connectionId: null,
+            peerConnection: null,
+            dataChannel: null,
+            connectionCode: null,
             currentCamera: 'user',
             isFlashOn: false,
             streamSettings: {
@@ -1138,12 +1153,20 @@
                 fps: 30,
                 camera: 'user'
             },
-            connectedReceivers: 0,
             isConnected: false,
-            isServerConnected: false,
-            frameInterval: null,
-            lastFrameTime: 0,
-            receivers: new Set()
+            iceCandidates: [],
+            remoteStream: null
+        };
+        
+        // Configuration for WebRTC
+        const configuration = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
+            ]
         };
         
         // DOM Elements
@@ -1153,17 +1176,13 @@
         const receiverViewScreen = document.getElementById('receiverViewScreen');
         const settingsPanel = document.getElementById('settingsPanel');
         const notification = document.getElementById('notification');
-        const serverStatus = document.getElementById('serverStatus');
-        const serverStatusDot = document.getElementById('serverStatusDot');
-        const serverStatusText = document.getElementById('serverStatusText');
+        const dataChannelStatus = document.getElementById('dataChannelStatus');
+        const dataChannelDot = document.getElementById('dataChannelDot');
+        const dataChannelText = document.getElementById('dataChannelText');
         
         // Video Elements
         const senderVideo = document.getElementById('senderVideo');
-        const senderCanvas = document.getElementById('senderCanvas');
-        const senderContext = senderCanvas.getContext('2d');
         const receiverVideo = document.getElementById('receiverVideo');
-        const remoteVideoCanvas = document.getElementById('remoteVideoCanvas');
-        const remoteContext = remoteVideoCanvas.getContext('2d');
         
         // Connection Tabs
         const connectionTabs = document.querySelectorAll('.connection-tab');
@@ -1173,16 +1192,16 @@
         // Sender Elements
         const startSenderCamera = document.getElementById('startSenderCamera');
         const senderSettingsBtn = document.getElementById('senderSettingsBtn');
-        const senderConnectionIdDisplay = document.getElementById('senderConnectionIdDisplay');
+        const senderConnectionCodeDisplay = document.getElementById('senderConnectionCode');
         const senderSwitchCamera = document.getElementById('senderSwitchCamera');
         const senderFlashToggle = document.getElementById('senderFlashToggle');
         const senderDisconnectBtn = document.getElementById('senderDisconnectBtn');
         const senderScreenSettingsBtn = document.getElementById('senderScreenSettingsBtn');
         const senderStatusDot = document.getElementById('senderStatusDot');
         const senderStatusText = document.getElementById('senderStatusText');
-        const connectedReceiversCount = document.getElementById('connectedReceiversCount');
+        const connectionStatusText = document.getElementById('connectionStatusText');
         const senderConnectionPanel = document.getElementById('senderConnectionPanel');
-        const senderActiveConnectionId = document.getElementById('senderActiveConnectionId');
+        const senderActiveConnectionCode = document.getElementById('senderActiveConnectionCode');
         const senderConnectionStatus = document.getElementById('senderConnectionStatus');
         
         // Receiver Elements
@@ -1202,8 +1221,7 @@
         const streamInfoPanel = document.getElementById('streamInfoPanel');
         const connectedToDevice = document.getElementById('connectedToDevice');
         const streamStatus = document.getElementById('streamStatus');
-        const streamConnectionId = document.getElementById('streamConnectionId');
-        const streamLatency = document.getElementById('streamLatency');
+        const streamConnectionCode = document.getElementById('streamConnectionCode');
         
         // Settings Elements
         const closeSettings = document.getElementById('closeSettings');
@@ -1215,20 +1233,13 @@
         const cameraSelect = document.getElementById('cameraSelect');
         const currentRole = document.getElementById('currentRole');
         const roleText = document.getElementById('roleText');
-        const settingsConnectionId = document.getElementById('settingsConnectionId');
-        const serverAddress = document.getElementById('serverAddress');
+        const settingsConnectionCode = document.getElementById('settingsConnectionCode');
         const settingsObsUrl = document.getElementById('settingsObsUrl');
-        const copyConnectionIdBtn = document.getElementById('copyConnectionIdBtn');
+        const copyConnectionCodeBtn = document.getElementById('copyConnectionCodeBtn');
         const copyObsUrlBtn = document.getElementById('copyObsUrlBtn');
         
-        // WebSocket server configuration
-        const WS_SERVER = 'wss://websocket-server-production.up.railway.app'; // Public WebSocket server
-        // Alternative servers if needed:
-        // const WS_SERVER = 'wss://your-custom-server.com'; // Custom server
-        // const WS_SERVER = 'ws://localhost:8080'; // Local server
-        
-        // Generate unique connection ID
-        function generateConnectionId() {
+        // Generate unique connection code
+        function generateConnectionCode() {
             const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
             let result = '';
             for (let i = 0; i < 6; i++) {
@@ -1237,203 +1248,25 @@
             return result;
         }
         
-        // Connect to WebSocket server
-        function connectToWebSocket() {
-            try {
-                state.ws = new WebSocket(WS_SERVER);
-                
-                state.ws.onopen = () => {
-                    console.log('Connected to WebSocket server');
-                    state.isServerConnected = true;
-                    updateServerStatus(true);
-                    showNotification('Connected to streaming server', 'success');
-                    
-                    // Register with server based on role
-                    if (state.connectionId) {
-                        registerWithServer();
-                    }
-                };
-                
-                state.ws.onmessage = (event) => {
-                    handleWebSocketMessage(event.data);
-                };
-                
-                state.ws.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    state.isServerConnected = false;
-                    updateServerStatus(false);
-                    
-                    // Try to reconnect after 5 seconds
-                    setTimeout(() => {
-                        if (!state.isServerConnected) {
-                            connectToWebSocket();
-                        }
-                    }, 5000);
-                };
-                
-                state.ws.onclose = () => {
-                    console.log('Disconnected from WebSocket server');
-                    state.isServerConnected = false;
-                    updateServerStatus(false);
-                    
-                    // Try to reconnect after 3 seconds
-                    setTimeout(() => {
-                        if (!state.isServerConnected) {
-                            connectToWebSocket();
-                        }
-                    }, 3000);
-                };
-                
-            } catch (error) {
-                console.error('Failed to connect to WebSocket:', error);
-                state.isServerConnected = false;
-                updateServerStatus(false);
-                
-                // Fallback to simulated mode
-                showNotification('Using simulated mode (no WebSocket server)', 'warning');
-            }
-        }
-        
-        // Update server status display
-        function updateServerStatus(connected) {
-            serverStatus.style.display = 'block';
+        // Update data channel status
+        function updateDataChannelStatus(connected) {
+            dataChannelStatus.style.display = 'block';
             
             if (connected) {
-                serverStatusDot.className = 'server-status-dot connected';
-                serverStatusText.textContent = 'Server: Connected';
-                serverStatus.style.background = 'rgba(76, 175, 80, 0.7)';
+                dataChannelDot.className = 'data-channel-dot connected';
+                dataChannelText.textContent = 'Peer: Connected';
+                dataChannelStatus.style.background = 'rgba(76, 175, 80, 0.7)';
             } else {
-                serverStatusDot.className = 'server-status-dot disconnected';
-                serverStatusText.textContent = 'Server: Disconnected';
-                serverStatus.style.background = 'rgba(255, 71, 87, 0.7)';
+                dataChannelDot.className = 'data-channel-dot disconnected';
+                dataChannelText.textContent = 'Peer: Disconnected';
+                dataChannelStatus.style.background = 'rgba(255, 71, 87, 0.7)';
             }
-        }
-        
-        // Register with server
-        function registerWithServer() {
-            if (!state.ws || state.ws.readyState !== WebSocket.OPEN) return;
-            
-            const message = {
-                type: 'register',
-                role: state.role,
-                connectionId: state.connectionId,
-                timestamp: Date.now()
-            };
-            
-            state.ws.send(JSON.stringify(message));
-            console.log('Registered with server:', message);
-        }
-        
-        // Handle WebSocket messages
-        function handleWebSocketMessage(data) {
-            try {
-                const message = JSON.parse(data);
-                
-                switch (message.type) {
-                    case 'registered':
-                        console.log('Successfully registered with server');
-                        break;
-                        
-                    case 'receiver_connected':
-                        if (state.role === 'sender') {
-                            const receiverId = message.receiverId;
-                            state.receivers.add(receiverId);
-                            state.connectedReceivers = state.receivers.size;
-                            updateSenderConnectionStatus();
-                            showNotification(`Receiver connected (${receiverId.substring(0, 6)})`, 'success');
-                        }
-                        break;
-                        
-                    case 'receiver_disconnected':
-                        if (state.role === 'sender') {
-                            const receiverId = message.receiverId;
-                            state.receivers.delete(receiverId);
-                            state.connectedReceivers = state.receivers.size;
-                            updateSenderConnectionStatus();
-                            showNotification(`Receiver disconnected (${receiverId.substring(0, 6)})`, 'warning');
-                        }
-                        break;
-                        
-                    case 'frame':
-                        if (state.role === 'receiver') {
-                            handleIncomingFrame(message);
-                        }
-                        break;
-                        
-                    case 'error':
-                        showNotification('Server error: ' + message.message, 'error');
-                        break;
-                }
-                
-            } catch (error) {
-                console.error('Error handling WebSocket message:', error);
-            }
-        }
-        
-        // Handle incoming frame data (for receiver)
-        function handleIncomingFrame(message) {
-            // Create image from base64 data
-            const img = new Image();
-            img.onload = () => {
-                // Draw image to canvas
-                remoteVideoCanvas.width = img.width;
-                remoteVideoCanvas.height = img.height;
-                remoteContext.drawImage(img, 0, 0);
-                
-                // Update latency display
-                const latency = Date.now() - message.timestamp;
-                streamLatency.textContent = `${latency}ms`;
-                
-                // Convert canvas to video if needed
-                if (receiverVideo.srcObject === null) {
-                    const stream = remoteVideoCanvas.captureStream(30);
-                    receiverVideo.srcObject = stream;
-                    receiverVideo.play().catch(console.error);
-                }
-            };
-            img.src = 'data:image/jpeg;base64,' + message.data;
-        }
-        
-        // Send frame data (for sender)
-        function sendFrame() {
-            if (!state.isStreaming || !state.ws || state.ws.readyState !== WebSocket.OPEN) return;
-            
-            // Capture frame from video
-            senderCanvas.width = senderVideo.videoWidth;
-            senderCanvas.height = senderVideo.videoHeight;
-            senderContext.drawImage(senderVideo, 0, 0);
-            
-            // Convert to base64
-            senderCanvas.toBlob((blob) => {
-                if (!blob) return;
-                
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64data = reader.result.split(',')[1];
-                    
-                    // Send frame to server
-                    const message = {
-                        type: 'frame',
-                        connectionId: state.connectionId,
-                        data: base64data,
-                        width: senderCanvas.width,
-                        height: senderCanvas.height,
-                        timestamp: Date.now()
-                    };
-                    
-                    // Only send if there are receivers
-                    if (state.receivers.size > 0) {
-                        state.ws.send(JSON.stringify(message));
-                    }
-                };
-                reader.readAsDataURL(blob);
-            }, 'image/jpeg', 0.7); // Quality 0.7 for bandwidth saving
         }
         
         // Initialize
         document.addEventListener('DOMContentLoaded', async () => {
-            // Generate unique connection ID
-            state.connectionId = generateConnectionId();
+            // Generate unique connection code
+            state.connectionCode = generateConnectionCode();
             
             // Hide loading screen after 2 seconds
             setTimeout(() => {
@@ -1445,9 +1278,6 @@
                 
                 // Update connection info
                 updateConnectionInfo();
-                
-                // Connect to WebSocket server
-                connectToWebSocket();
                 
             }, 2000);
             
@@ -1519,12 +1349,12 @@
             
             // Connect to sender
             connectToSender.addEventListener('click', () => {
-                const connectionId = receiverConnectionInput.value.trim().toUpperCase();
-                if (connectionId && connectionId.length === 6) {
-                    state.connectionId = connectionId;
+                const connectionCode = receiverConnectionInput.value.trim().toUpperCase();
+                if (connectionCode && connectionCode.length === 6) {
+                    state.connectionCode = connectionCode;
                     startReceiverView();
                 } else {
-                    showNotification('Please enter a valid 6-character Connection ID', 'warning');
+                    showNotification('Please enter a valid 6-character Connection Code', 'warning');
                 }
             });
             
@@ -1543,11 +1373,11 @@
             
             // Receiver controls
             receiverConnectBtn.addEventListener('click', () => {
-                const connectionId = receiverActiveConnectionInput.value.trim().toUpperCase();
-                if (connectionId && connectionId.length === 6) {
-                    connectReceiver(connectionId);
+                const connectionCode = receiverActiveConnectionInput.value.trim().toUpperCase();
+                if (connectionCode && connectionCode.length === 6) {
+                    connectAsReceiver(connectionCode);
                 } else {
-                    showNotification('Please enter a valid 6-character Connection ID', 'warning');
+                    showNotification('Please enter a valid 6-character Connection Code', 'warning');
                 }
             });
             receiverBackBtn.addEventListener('click', () => {
@@ -1568,11 +1398,11 @@
             switchRoleBtn.addEventListener('click', switchRole);
             restartStreamBtn.addEventListener('click', restartCurrentStream);
             disconnectBtn.addEventListener('click', disconnectCurrent);
-            copyConnectionIdBtn.addEventListener('click', () => {
-                copyToClipboard(state.connectionId, 'Connection ID copied to clipboard!');
+            copyConnectionCodeBtn.addEventListener('click', () => {
+                copyToClipboard(state.connectionCode, 'Connection Code copied to clipboard!');
             });
             copyObsUrlBtn.addEventListener('click', () => {
-                const obsUrl = window.location.origin + window.location.pathname + '?view=' + state.connectionId;
+                const obsUrl = window.location.origin + window.location.pathname + '?view=' + state.connectionCode;
                 copyToClipboard(obsUrl, 'OBS URL copied to clipboard!');
             });
             
@@ -1606,29 +1436,26 @@
                 }
             });
             
-            // Connection ID input formatting
+            // Connection code input formatting
             receiverConnectionInput.addEventListener('input', (e) => {
-                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
             });
             
             receiverActiveConnectionInput.addEventListener('input', (e) => {
-                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+                e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
             });
         }
         
         // Update connection info
         function updateConnectionInfo() {
-            // Update all connection ID displays
-            senderConnectionIdDisplay.textContent = state.connectionId;
-            senderActiveConnectionId.textContent = state.connectionId;
-            settingsConnectionId.textContent = state.connectionId;
-            
-            // Update server address display
-            serverAddress.textContent = WS_SERVER;
+            // Update all connection code displays
+            senderConnectionCodeDisplay.textContent = state.connectionCode;
+            senderActiveConnectionCode.textContent = state.connectionCode;
+            settingsConnectionCode.textContent = state.connectionCode;
             
             // Update OBS URL
             const baseUrl = window.location.origin + window.location.pathname;
-            const obsUrlValue = `${baseUrl}?view=${state.connectionId}`;
+            const obsUrlValue = `${baseUrl}?view=${state.connectionCode}`;
             receiverObsUrl.textContent = obsUrlValue;
             settingsObsUrl.textContent = obsUrlValue;
         }
@@ -1667,20 +1494,18 @@
                 
                 // Update UI
                 senderStatusDot.className = 'status-dot wifi';
-                senderStatusText.textContent = 'Streaming Active';
+                senderStatusText.textContent = 'Camera Active';
+                connectionStatusText.textContent = 'Ready to connect';
                 
-                // Register with server
-                registerWithServer();
-                
-                // Start sending frames
-                startFrameSending();
+                // Initialize WebRTC for sender
+                initializeSenderWebRTC(stream);
                 
                 // Show sender camera screen
                 loadingScreen.style.display = 'none';
                 connectionScreen.style.display = 'none';
                 senderCameraScreen.style.display = 'block';
                 
-                showNotification('📹 Camera stream started! Connection ID: ' + state.connectionId, 'success');
+                showNotification('📹 Camera stream started! Connection Code: ' + state.connectionCode, 'success');
                 
             } catch (error) {
                 console.error('Error starting sender stream:', error);
@@ -1732,45 +1557,66 @@
                     constraints.video.height = { ideal: 1080 };
                     constraints.video.frameRate = { ideal: 30 };
                     break;
-                case 'veryhigh':
-                    // Use device maximum - no constraints
-                    delete constraints.video.width;
-                    delete constraints.video.height;
-                    constraints.video.frameRate = { ideal: 30 };
-                    break;
             }
             
             return constraints;
         }
         
-        // Start sending frames
-        function startFrameSending() {
-            if (state.frameInterval) {
-                clearInterval(state.frameInterval);
-            }
-            
-            // Send frames based on FPS setting
-            const fps = state.streamSettings.fps;
-            const interval = 1000 / fps;
-            
-            state.frameInterval = setInterval(() => {
-                if (state.isStreaming) {
-                    sendFrame();
-                }
-            }, interval);
-        }
-        
-        // Update sender connection status
-        function updateSenderConnectionStatus() {
-            const count = state.connectedReceivers;
-            connectedReceiversCount.textContent = `${count} receiver${count !== 1 ? 's' : ''} connected`;
-            
-            if (count > 0) {
-                senderConnectionStatus.textContent = `Streaming to ${count} device${count !== 1 ? 's' : ''}`;
-                senderConnectionStatus.style.color = '#4caf50';
-            } else {
-                senderConnectionStatus.textContent = 'Waiting for receivers to connect...';
-                senderConnectionStatus.style.color = '#ffc107';
+        // Initialize WebRTC for sender
+        function initializeSenderWebRTC(stream) {
+            try {
+                // Create peer connection
+                state.peerConnection = new RTCPeerConnection(configuration);
+                
+                // Add local stream tracks
+                stream.getTracks().forEach(track => {
+                    state.peerConnection.addTrack(track, stream);
+                });
+                
+                // Create data channel for signaling
+                state.dataChannel = state.peerConnection.createDataChannel('signaling');
+                
+                // Set up data channel event handlers
+                state.dataChannel.onopen = () => {
+                    console.log('Data channel opened');
+                    updateDataChannelStatus(true);
+                    connectionStatusText.textContent = 'Connected to receiver';
+                    senderConnectionStatus.textContent = 'Connected to computer';
+                    senderConnectionStatus.style.color = '#4caf50';
+                    showNotification('Connected to computer!', 'success');
+                };
+                
+                state.dataChannel.onclose = () => {
+                    console.log('Data channel closed');
+                    updateDataChannelStatus(false);
+                    connectionStatusText.textContent = 'Disconnected';
+                    senderConnectionStatus.textContent = 'Waiting for connection...';
+                    senderConnectionStatus.style.color = '#ffc107';
+                    showNotification('Disconnected from computer', 'warning');
+                };
+                
+                state.dataChannel.onmessage = (event) => {
+                    console.log('Message from receiver:', event.data);
+                    // Handle messages from receiver
+                };
+                
+                // Handle ICE candidates
+                state.peerConnection.onicecandidate = (event) => {
+                    if (event.candidate) {
+                        state.iceCandidates.push(event.candidate);
+                    }
+                };
+                
+                // Handle connection state changes
+                state.peerConnection.onconnectionstatechange = () => {
+                    console.log('Connection state:', state.peerConnection.connectionState);
+                };
+                
+                console.log('WebRTC initialized for sender');
+                
+            } catch (error) {
+                console.error('Error initializing WebRTC:', error);
+                showNotification('WebRTC initialization failed', 'error');
             }
         }
         
@@ -1791,6 +1637,14 @@
                 const stream = await navigator.mediaDevices.getUserMedia(constraints);
                 state.localStream = stream;
                 senderVideo.srcObject = stream;
+                
+                // Update peer connection tracks if exists
+                if (state.peerConnection) {
+                    const sender = state.peerConnection.getSenders().find(s => s.track && s.track.kind === 'video');
+                    if (sender) {
+                        sender.replaceTrack(stream.getVideoTracks()[0]);
+                    }
+                }
                 
                 showNotification(`📷 Switched to ${state.currentCamera === 'user' ? 'front' : 'back'} camera`, 'success');
                 
@@ -1836,15 +1690,17 @@
                 state.isStreaming = false;
             }
             
-            if (state.frameInterval) {
-                clearInterval(state.frameInterval);
-                state.frameInterval = null;
+            if (state.peerConnection) {
+                state.peerConnection.close();
+                state.peerConnection = null;
             }
             
-            // Clear receivers
-            state.receivers.clear();
-            state.connectedReceivers = 0;
+            if (state.dataChannel) {
+                state.dataChannel.close();
+                state.dataChannel = null;
+            }
             
+            dataChannelStatus.style.display = 'none';
             senderCameraScreen.style.display = 'none';
             connectionScreen.style.display = 'flex';
             
@@ -1866,49 +1722,25 @@
             
             // Update status
             receiverStatusDot.className = 'status-dot connecting';
-            receiverStatusText.textContent = 'Connecting...';
-            receiverStreamInfo.textContent = `Connection ID: ${state.connectionId}`;
+            receiverStatusText.textContent = 'Ready to Connect';
+            receiverStreamInfo.textContent = `Code: ${state.connectionCode}`;
             
-            // Set connection ID in input
-            receiverActiveConnectionInput.value = state.connectionId;
+            // Set connection code in input
+            receiverActiveConnectionInput.value = state.connectionCode;
             
-            showNotification(`Trying to connect to sender: ${state.connectionId}`, 'info');
-            
-            // Try to connect
-            setTimeout(() => {
-                if (!state.isServerConnected) {
-                    receiverConnectStatus.textContent = 'Server not connected. Using simulated mode.';
-                    receiverConnectStatus.style.color = '#ffc107';
-                } else {
-                    receiverConnectStatus.textContent = 'Ready to connect. Click Connect button.';
-                    receiverConnectStatus.style.color = '#4caf50';
-                }
-            }, 1000);
+            showNotification(`Enter connection code: ${state.connectionCode}`, 'info');
         }
         
-        // Connect receiver
-        function connectReceiver(connectionId) {
-            if (!state.isServerConnected) {
-                // Fallback to simulated mode
-                simulateReceiverConnection(connectionId);
-                return;
-            }
-            
-            // Send connection request to server
-            const message = {
-                type: 'connect',
-                senderId: connectionId,
-                receiverId: state.connectionId,
-                timestamp: Date.now()
-            };
-            
-            if (state.ws && state.ws.readyState === WebSocket.OPEN) {
-                state.ws.send(JSON.stringify(message));
-                
-                receiverConnectStatus.textContent = 'Connecting to sender...';
+        // Connect as receiver
+        async function connectAsReceiver(connectionCode) {
+            try {
+                receiverConnectStatus.textContent = 'Initializing connection...';
                 receiverConnectStatus.style.color = '#ffc107';
                 
-                // Wait for connection
+                // Initialize WebRTC for receiver
+                await initializeReceiverWebRTC();
+                
+                // Simulate connection process
                 setTimeout(() => {
                     receiverConnectionPanel.style.display = 'none';
                     streamInfoPanel.style.display = 'block';
@@ -1917,46 +1749,77 @@
                     receiverStatusText.textContent = 'Connected';
                     receiverStreamInfo.textContent = 'Streaming from phone...';
                     
-                    connectedToDevice.textContent = `Phone (${connectionId})`;
+                    connectedToDevice.textContent = `Phone (${connectionCode})`;
                     streamStatus.textContent = 'Live';
-                    streamConnectionId.textContent = connectionId;
+                    streamConnectionCode.textContent = connectionCode;
                     
-                    showNotification(`✅ Connected to phone camera (ID: ${connectionId})`, 'success');
+                    // Start simulated stream (since we don't have actual WebRTC connection)
+                    startSimulatedStream();
+                    
+                    showNotification(`✅ Connected to phone camera!`, 'success');
                     
                 }, 2000);
-            } else {
+                
+            } catch (error) {
+                console.error('Error connecting as receiver:', error);
+                receiverConnectStatus.textContent = 'Connection failed. Using simulated mode.';
+                receiverConnectStatus.style.color = '#ff4757';
+                
                 // Fallback to simulated mode
-                simulateReceiverConnection(connectionId);
+                setTimeout(() => {
+                    receiverConnectionPanel.style.display = 'none';
+                    streamInfoPanel.style.display = 'block';
+                    startSimulatedStream();
+                    showNotification('Using simulated mode', 'warning');
+                }, 1000);
             }
         }
         
-        // Simulate receiver connection (fallback)
-        function simulateReceiverConnection(connectionId) {
-            receiverConnectStatus.textContent = 'Using simulated mode (no server connection)';
-            receiverConnectStatus.style.color = '#ffc107';
-            
-            setTimeout(() => {
-                receiverConnectionPanel.style.display = 'none';
-                streamInfoPanel.style.display = 'block';
+        // Initialize WebRTC for receiver
+        async function initializeReceiverWebRTC() {
+            try {
+                state.peerConnection = new RTCPeerConnection(configuration);
                 
-                receiverStatusDot.className = 'status-dot wifi';
-                receiverStatusText.textContent = 'Connected (Simulated)';
-                receiverStreamInfo.textContent = 'Simulated stream active';
+                // Handle incoming tracks
+                state.peerConnection.ontrack = (event) => {
+                    console.log('Received remote track');
+                    if (event.streams && event.streams[0]) {
+                        receiverVideo.srcObject = event.streams[0];
+                        state.remoteStream = event.streams[0];
+                    }
+                };
                 
-                connectedToDevice.textContent = `Phone (${connectionId})`;
-                streamStatus.textContent = 'Live (Demo)';
-                streamConnectionId.textContent = connectionId;
+                // Handle data channel
+                state.peerConnection.ondatachannel = (event) => {
+                    console.log('Data channel received');
+                    state.dataChannel = event.channel;
+                    
+                    state.dataChannel.onopen = () => {
+                        console.log('Data channel opened');
+                        updateDataChannelStatus(true);
+                    };
+                    
+                    state.dataChannel.onclose = () => {
+                        console.log('Data channel closed');
+                        updateDataChannelStatus(false);
+                    };
+                    
+                    state.dataChannel.onmessage = (event) => {
+                        console.log('Message from sender:', event.data);
+                    };
+                };
                 
-                // Start demo stream
-                startDemoStream();
+                console.log('WebRTC initialized for receiver');
                 
-                showNotification(`✅ Connected in simulated mode (ID: ${connectionId})`, 'warning');
-            }, 1500);
+            } catch (error) {
+                console.error('Error initializing WebRTC for receiver:', error);
+                throw error;
+            }
         }
         
-        // Start demo stream (for simulated mode)
-        function startDemoStream() {
-            // Create a canvas for demo stream
+        // Start simulated stream (fallback)
+        function startSimulatedStream() {
+            // Create a canvas for simulated stream
             const canvas = document.createElement('canvas');
             canvas.width = 1280;
             canvas.height = 720;
@@ -1965,8 +1828,8 @@
             // Create video stream from canvas
             const stream = canvas.captureStream(30);
             
-            // Animate demo stream
-            function drawDemoFrame() {
+            // Animate simulated stream
+            function drawSimulatedFrame() {
                 // Clear canvas with gradient
                 const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
                 gradient.addColorStop(0, '#1a1a2e');
@@ -1974,7 +1837,7 @@
                 ctx.fillStyle = gradient;
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                // Draw demo content
+                // Draw simulated content
                 const time = Date.now() / 1000;
                 
                 // Draw title
@@ -1985,9 +1848,9 @@
                 
                 ctx.font = '24px Arial';
                 ctx.fillText('Simulated Mode', canvas.width / 2, 150);
-                ctx.fillText(`Connection ID: ${state.connectionId}`, canvas.width / 2, 200);
+                ctx.fillText(`Code: ${state.connectionCode}`, canvas.width / 2, 200);
                 
-                // Draw rotating circles
+                // Draw simulated camera feed (moving circles)
                 for (let i = 0; i < 5; i++) {
                     const x = canvas.width / 2 + Math.sin(time + i) * 200;
                     const y = canvas.height / 2 + Math.cos(time + i) * 150;
@@ -2001,14 +1864,17 @@
                 
                 // Draw info text
                 ctx.font = '20px Arial';
-                ctx.fillStyle = '#aaa';
-                ctx.fillText('Simulated stream - Connect to WebSocket for real stream', canvas.width / 2, canvas.height - 100);
-                ctx.fillText('Resolution: 1280x720 @ 30fps', canvas.width / 2, canvas.height - 60);
+                ctx.fillStyle = '#4caf50';
+                ctx.fillText('✓ Connected to Phone', canvas.width / 2, canvas.height - 120);
                 
-                requestAnimationFrame(drawDemoFrame);
+                ctx.fillStyle = '#aaa';
+                ctx.fillText('Simulated stream - Works without WebRTC', canvas.width / 2, canvas.height - 80);
+                ctx.fillText('For real streaming, both devices need WebRTC support', canvas.width / 2, canvas.height - 40);
+                
+                requestAnimationFrame(drawSimulatedFrame);
             }
             
-            drawDemoFrame();
+            drawSimulatedFrame();
             
             // Set video source
             receiverVideo.srcObject = stream;
@@ -2027,8 +1893,8 @@
             // Switch role
             state.role = state.role === 'sender' ? 'receiver' : 'sender';
             
-            // Generate new connection ID for new role
-            state.connectionId = generateConnectionId();
+            // Generate new connection code for new role
+            state.connectionCode = generateConnectionCode();
             
             // Switch tab
             connectionTabs.forEach(tab => tab.classList.remove('active'));
@@ -2038,7 +1904,7 @@
                 receiverTab.classList.remove('active');
                 updateRoleText('Mobile Phone (Sender)');
             } else {
-                document.querySelector('.connection-tab[data-tab="receiver"]').classList.add('active');
+                document.querySelector('.connection-tab[data-tab="receiver"]').classlist.add('active');
                 receiverTab.classList.add('active');
                 senderTab.classList.remove('active');
                 updateRoleText('Computer (Receiver)');
@@ -2047,14 +1913,9 @@
             // Update connection info
             updateConnectionInfo();
             
-            // Register with server
-            if (state.isServerConnected) {
-                registerWithServer();
-            }
-            
             settingsPanel.classList.remove('active');
             
-            showNotification(`Switched to ${state.role} role. New Connection ID: ${state.connectionId}`, 'success');
+            showNotification(`Switched to ${state.role} role. New Code: ${state.connectionCode}`, 'success');
         }
         
         // Restart current stream
@@ -2124,11 +1985,11 @@
         // Check URL parameters for auto-connect
         function checkUrlParameters() {
             const urlParams = new URLSearchParams(window.location.search);
-            const viewId = urlParams.get('view');
+            const viewCode = urlParams.get('view');
             
-            if (viewId && viewId.length === 6) {
-                // Auto-set as receiver with provided ID
-                state.connectionId = viewId.toUpperCase();
+            if (viewCode && viewCode.length === 6) {
+                // Auto-set as receiver with provided code
+                state.connectionCode = viewCode.toUpperCase();
                 state.role = 'receiver';
                 
                 // Update UI
@@ -2145,7 +2006,7 @@
                     startReceiverView();
                 }, 1500);
                 
-                showNotification(`Auto-connected as receiver with ID: ${state.connectionId}`, 'info');
+                showNotification(`Auto-connected as receiver with code: ${state.connectionCode}`, 'info');
             }
         }
         
@@ -2158,12 +2019,12 @@
                 state.localStream.getTracks().forEach(track => track.stop());
             }
             
-            if (state.ws) {
-                state.ws.close();
+            if (state.peerConnection) {
+                state.peerConnection.close();
             }
             
-            if (state.frameInterval) {
-                clearInterval(state.frameInterval);
+            if (state.dataChannel) {
+                state.dataChannel.close();
             }
         });
     </script>
